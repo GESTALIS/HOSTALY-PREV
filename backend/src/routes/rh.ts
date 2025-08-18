@@ -5,10 +5,15 @@ const { requireAuth } = require('./auth');
 const prisma = new PrismaClient();
 const rhRouter = Router();
 
+// Route de test sans authentification
+rhRouter.get('/test', (req, res) => {
+  res.json({ message: 'API RH fonctionne !', timestamp: new Date().toISOString() });
+});
+
 // === GESTION EMPLOYÉS ===
 
-// GET /api/v1/rh/employees - Liste des employés avec filtres
-rhRouter.get('/employees', requireAuth, async (req, res, next) => {
+// GET /api/v1/rh/employees - Liste des employés avec filtres (DEV: sans auth)
+rhRouter.get('/employees', async (req, res, next) => {
   try {
     const { name, service, status, contractType } = req.query;
     
@@ -114,8 +119,8 @@ rhRouter.delete('/employees/:id', requireAuth, async (req, res, next) => {
 
 // === GESTION SERVICES ===
 
-// GET /api/v1/rh/services - Liste des services
-rhRouter.get('/services', requireAuth, async (req, res, next) => {
+// GET /api/v1/rh/services - Liste des services (DEV: sans auth)
+rhRouter.get('/services', async (req, res, next) => {
   try {
     const services = await prisma.service.findMany({
       select: {

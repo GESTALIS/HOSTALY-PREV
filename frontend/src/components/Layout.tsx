@@ -34,17 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Ratios', href: '/ratios', icon: CogIcon },
   ];
 
-  // Navigation des sous-sections RH (visible uniquement sur /rh)
-  const rhSubSections = [
-    { name: 'Employés', href: '/rh/employees', icon: UsersIcon },
-    { name: 'Services', href: '/rh/services', icon: CogIcon },
-    { name: 'Housekeeping', href: '/rh/housekeeping', icon: CogIcon },
-    { name: 'Planning', href: '/rh/planning', icon: CogIcon },
-    { name: 'Configuration', href: '/rh/config', icon: CogIcon },
-  ];
 
-  const isRHModule = location.pathname.startsWith('/rh');
-  const currentModule = mainModules.find(module => location.pathname.startsWith(module.href));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -59,29 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
 
-            {/* Navigation des modules principaux - Desktop */}
-            <nav className="hidden md:flex space-x-1">
-              {mainModules.map((item) => {
-                const isActive = location.pathname === item.href || 
-                               (item.href !== '/' && location.pathname.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                      isActive
-                        ? 'text-hotaly-secondary bg-hotaly-secondary/10 border-b-2 border-hotaly-secondary'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <item.icon className={`mr-2 h-5 w-5 ${
-                      isActive ? 'text-hotaly-secondary' : 'text-gray-400 group-hover:text-gray-500'
-                    }`} />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
+
 
             {/* Actions utilisateur */}
             <div className="flex items-center space-x-4">
@@ -108,29 +76,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
 
-          {/* Barre de sous-navigation pour le module RH */}
-          {isRHModule && (
-            <div className="border-t border-gray-100 bg-gray-50">
-              <div className="flex space-x-1 py-2">
-                {rhSubSections.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                        isActive
-                          ? 'text-hotaly-primary bg-white shadow-sm border border-gray-200'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+
         </div>
       </header>
 
@@ -167,54 +113,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </button>
               </div>
 
-              {/* Navigation mobile */}
-              <nav className="p-4 space-y-2">
-                {mainModules.map((item) => {
-                  const isActive = location.pathname === item.href || 
-                                 (item.href !== '/' && location.pathname.startsWith(item.href));
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center px-3 py-2 text-base font-medium rounded-md ${
-                        isActive
-                          ? 'text-hotaly-secondary bg-hotaly-secondary/10'
-                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
-                    >
-                      <item.icon className="mr-3 h-6 w-6" />
-                      {item.name}
-                    </Link>
-                  );
-                })}
-
-                {/* Sous-sections RH en mobile */}
-                {isRHModule && (
-                  <div className="pt-4 border-t border-gray-200">
-                    <h3 className="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                      Sections RH
-                    </h3>
-                    {rhSubSections.map((item) => {
-                      const isActive = location.pathname === item.href;
-                      return (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center px-6 py-2 text-sm font-medium rounded-md ${
-                            isActive
-                              ? 'text-hotaly-primary bg-hotaly-primary/10'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                          }`}
-                        >
-                          {item.name}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </nav>
+              
             </motion.div>
           </motion.div>
         )}
