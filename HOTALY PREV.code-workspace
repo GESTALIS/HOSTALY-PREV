@@ -1,0 +1,82 @@
+{
+  "folders": [
+    {
+      "name": "HOTALY PREV",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "css.validate": false,
+    "less.validate": false,
+    "scss.validate": false,
+    "css.lint.unknownAtRules": "ignore",
+    "css.lint.unknownProperties": "ignore",
+    "css.lint.unknownVendorSpecificProperties": "ignore",
+    "css.lint.validProperties": [],
+    "css.lint.duplicateProperties": "ignore",
+    "css.lint.emptyRules": "ignore",
+    "css.lint.importStatement": "ignore",
+    "css.lint.hexColorLength": "ignore",
+    "css.lint.argumentsInColorFunction": "ignore",
+    "css.lint.unknownUnits": "ignore",
+    "css.lint.vendorPrefix": "ignore",
+    "css.lint.zeroUnits": "ignore",
+    "css.lint.fontFaceProperties": "ignore",
+    "css.lint.hexColors": "ignore",
+    "css.lint.overqualifiedElements": "ignore",
+    "css.lint.idSelector": "ignore",
+    "css.lint.universalSelector": "ignore",
+    "css.lint.unqualifiedAttributes": "ignore",
+    "css.lint.important": "ignore",
+    "css.lint.float": "ignore",
+    "css.lint.compatibleVendorPrefixes": "ignore",
+    "css.lint.boxModel": "ignore",
+    "css.lint.outlineNone": "ignore",
+    "css.lint.displayPropertyGrouping": "ignore",
+    "css.lint.knownProperties": "ignore",
+    "css.lint.duplicateSelectors": "ignore",
+    "tailwindCSS.includeLanguages": {
+      "typescript": "typescript",
+      "typescriptreact": "typescriptreact"
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+      ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+      ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+      ["classnames\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+    "tailwindCSS.files.exclude": [
+      "**/node_modules/**/*",
+      "**/.git/**/*",
+      "**/dist/**/*"
+    ],
+    "tailwindCSS.requireConfigFile": false,
+    "tailwindCSS.emmetCompletions": true,
+    "editor.quickSuggestions": {
+      "strings": true
+    },
+    "files.associations": {
+      "*.css": "tailwindcss"
+    },
+    "emmet.includeLanguages": {
+      "typescript": "html",
+      "typescriptreact": "html"
+    },
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.git": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "bradlc.vscode-tailwindcss",
+      "esbenp.prettier-vscode",
+      "ms-vscode.vscode-typescript-next",
+      "formulahendry.auto-rename-tag",
+      "christian-kohler.path-intellisense",
+      "ms-vscode.vscode-json"
+    ]
+  }
+}

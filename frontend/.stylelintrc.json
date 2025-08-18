@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "at-rule-no-unknown": null,
+    "property-no-vendor-prefix": null,
+    "value-no-vendor-prefix": null,
+    "selector-no-vendor-prefix": null,
+    "declaration-block-no-duplicate-properties": null,
+    "no-duplicate-selectors": null,
+    "no-empty-source": null,
+    "no-invalid-double-slash-comments": null
+  }
+}
