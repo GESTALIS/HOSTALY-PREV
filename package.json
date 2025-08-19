@@ -11,7 +11,9 @@
     "setup": "node scripts/allocate-ports.cjs",
     "db": "docker compose --env-file .env.ports up -d && npm run -w backend prisma:migrate && npm run -w backend prisma:seed",
     "api": "npm run -w backend dev",
-    "front": "npm run -w frontend dev"
+    "front": "npm run -w frontend dev",
+    "shutdown": "node scripts/shutdown.cjs",
+    "close": "node scripts/shutdown.cjs"
   },
   "devDependencies": {
     "detect-port": "^1.6.1"

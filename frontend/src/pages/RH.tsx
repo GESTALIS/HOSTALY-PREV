@@ -94,6 +94,9 @@ const RH: React.FC = () => {
     echelon: number;
     hourlyRate: number;
   }>>([]);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const sections = [
     { id: 'dashboard', name: 'Dashboard RH', icon: HomeIcon, color: 'hotaly-primary', description: 'Vue d\'ensemble' },
@@ -181,18 +184,36 @@ const RH: React.FC = () => {
   };
 
   const handleEditEmployee = (employee: any) => {
-    console.log('Modifier employé:', employee);
-    // Ici vous pouvez ouvrir un modal d'édition
+    setSelectedEmployee(employee);
+    setIsEditModalOpen(true);
   };
 
-  const handleDeleteEmployee = (employee: any) => {
-    console.log('Supprimer employé:', employee);
-    // Ici vous pouvez implémenter la suppression
+  const handleDeleteEmployee = async (employee: any) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'employé ${employee.firstName} ${employee.lastName} ?`)) {
+      try {
+        const response = await fetch(`/api/v1/rh/employees/${employee.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          loadData(); // Recharger les données
+          alert('Employé supprimé avec succès');
+        } else {
+          alert('Erreur lors de la suppression de l\'employé');
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la suppression de l\'employé');
+      }
+    }
   };
 
   const handleViewEmployee = (employee: any) => {
-    console.log('Voir employé:', employee);
-    // Ici vous pouvez ouvrir un modal de visualisation
+    setSelectedEmployee(employee);
+    setIsViewModalOpen(true);
   };
 
   const handleEmployeeSelectionChange = (selectedIds: string[]) => {
@@ -551,7 +572,7 @@ const RH: React.FC = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Modal d'ajout d'employé */}
+      {/* Modals intégrés directement */}
       <AddEmployeeModal
         isOpen={isAddEmployeeModalOpen}
         onClose={() => setIsAddEmployeeModalOpen(false)}
@@ -559,6 +580,102 @@ const RH: React.FC = () => {
         services={services}
         salaryGrids={salaryGrids}
       />
+
+      {/* Modal de visualisation intégré */}
+      {isViewModalOpen && selectedEmployee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-semibold">Détails de l'employé</h3>
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-medium">Prénom:</label>
+                  <p className="text-gray-700">{selectedEmployee.firstName}</p>
+                </div>
+                <div>
+                  <label className="font-medium">Nom:</label>
+                  <p className="text-gray-700">{selectedEmployee.lastName}</p>
+                </div>
+                <div>
+                  <label className="font-medium">Service:</label>
+                  <p className="text-gray-700">{selectedEmployee.mainService?.name}</p>
+                </div>
+                <div>
+                  <label className="font-medium">Contrat:</label>
+                  <p className="text-gray-700">{selectedEmployee.contractType}</p>
+                </div>
+                <div>
+                  <label className="font-medium">Heures:</label>
+                  <p className="text-gray-700">{selectedEmployee.weeklyHours}</p>
+                </div>
+                <div>
+                  <label className="font-medium">Statut:</label>
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    selectedEmployee.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedEmployee.isActive ? 'Actif' : 'Inactif'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end p-6 border-t">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'édition intégré */}
+      {isEditModalOpen && selectedEmployee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-semibold">Modifier l'employé</h3>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                Modification de {selectedEmployee.firstName} {selectedEmployee.lastName}
+              </p>
+              <p className="text-sm text-gray-500">
+                Fonctionnalité d'édition en cours de développement...
+              </p>
+            </div>
+            <div className="flex justify-end p-6 border-t">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 mr-2"
+              >
+                Annuler
+              </button>
+              <button
+                className="px-4 py-2 bg-hotaly-primary text-white rounded hover:bg-hotaly-primary-dark"
+                disabled
+              >
+                Modifier
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
