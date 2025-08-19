@@ -42,8 +42,8 @@ rhRouter.get('/employees', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// POST /api/v1/rh/employees - Créer un employé
-rhRouter.post('/employees', requireAuth, async (req, res, next) => {
+// POST /api/v1/rh/employees - Créer un employé (DEV: sans auth)
+rhRouter.post('/employees', async (req, res, next) => {
   try {
     const { firstName, lastName, mainServiceId, contractType, weeklyHours, salaryGridId, polyvalentServiceIds = [] } = req.body;
 
@@ -206,8 +206,8 @@ rhRouter.put('/services/:id/schedule', requireAuth, async (req, res, next) => {
 
 // === GRILLE SALARIALE ===
 
-// GET /api/v1/rh/salary-grid - Liste de la grille salariale
-rhRouter.get('/salary-grid', requireAuth, async (req, res, next) => {
+// GET /api/v1/rh/salary-grid - Liste de la grille salariale (DEV: sans auth)
+rhRouter.get('/salary-grid', async (req, res, next) => {
   try {
     const salaryGrid = await prisma.salaryGrid.findMany({
       orderBy: [{ level: 'asc' }, { echelon: 'asc' }]
@@ -217,8 +217,8 @@ rhRouter.get('/salary-grid', requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// POST /api/v1/rh/salary-grid - Créer une entrée de grille
-rhRouter.post('/salary-grid', requireAuth, async (req, res, next) => {
+// POST /api/v1/rh/salary-grid - Créer une entrée de grille (DEV: sans auth)
+rhRouter.post('/salary-grid', async (req, res, next) => {
   try {
     const { level, echelon, hourlyRate, daysOff, vacationDays } = req.body;
 
@@ -233,6 +233,36 @@ rhRouter.post('/salary-grid', requireAuth, async (req, res, next) => {
     });
 
     res.status(201).json(salaryEntry);
+  } catch (e) { next(e); }
+});
+
+// PUT /api/v1/rh/salary-grid/:id - Modifier une grille salariale (DEV: sans auth)
+rhRouter.put('/salary-grid/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const { level, echelon, hourlyRate, daysOff, vacationDays } = req.body;
+
+    const salaryEntry = await prisma.salaryGrid.update({
+      where: { id },
+      data: {
+        level: Number(level),
+        echelon: Number(echelon),
+        hourlyRate,
+        daysOff: Number(daysOff),
+        vacationDays: Number(vacationDays)
+      }
+    });
+
+    res.json(salaryEntry);
+  } catch (e) { next(e); }
+});
+
+// DELETE /api/v1/rh/salary-grid/:id - Supprimer une grille salariale (DEV: sans auth)
+rhRouter.delete('/salary-grid/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    await prisma.salaryGrid.delete({ where: { id } });
+    res.status(204).send();
   } catch (e) { next(e); }
 });
 

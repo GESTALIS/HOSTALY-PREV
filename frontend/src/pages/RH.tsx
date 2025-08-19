@@ -25,6 +25,8 @@ import Button from '../components/ui/Button';
 import EmployeeFilters from '../components/rh/EmployeeFilters';
 import EmployeeActions from '../components/rh/EmployeeActions';
 import EmployeeTable from '../components/rh/EmployeeTable';
+import AddEmployeeModal from '../components/employees/AddEmployeeModal';
+import SalaryGridManager from '../components/rh/SalaryGridManager';
 
 interface Employee {
   id: number;
@@ -85,6 +87,13 @@ const RH: React.FC = () => {
     status: '',
     polyvalence: ''
   });
+  const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
+  const [salaryGrids, setSalaryGrids] = useState<Array<{
+    id: number;
+    level: number;
+    echelon: number;
+    hourlyRate: number;
+  }>>([]);
 
   const sections = [
     { id: 'dashboard', name: 'Dashboard RH', icon: HomeIcon, color: 'hotaly-primary', description: 'Vue d\'ensemble' },
@@ -107,16 +116,19 @@ const RH: React.FC = () => {
       console.log('🔍 Test de l\'endpoint /rh/employees...');
       
       // Test sans authentification (développement)
-      const [employeesResponse, servicesResponse] = await Promise.all([
+      const [employeesResponse, servicesResponse, salaryGridsResponse] = await Promise.all([
         api.get('/rh/employees'),
-        api.get('/rh/services')
+        api.get('/rh/services'),
+        api.get('/rh/salary-grid')
       ]);
       
       console.log('✅ Réponse employés:', employeesResponse.data);
       console.log('✅ Réponse services:', servicesResponse.data);
+      console.log('✅ Réponse grilles salariales:', salaryGridsResponse.data);
       
       setEmployees(employeesResponse.data);
       setServices(servicesResponse.data);
+      setSalaryGrids(salaryGridsResponse.data);
       setLoading(false);
     } catch (error: any) {
       console.error('❌ Erreur détaillée:', error);
@@ -150,8 +162,7 @@ const RH: React.FC = () => {
   };
 
   const handleAddEmployee = () => {
-    console.log('Ajouter un employé');
-    // Ici vous pouvez ouvrir un modal ou naviguer vers un formulaire
+    setIsAddEmployeeModalOpen(true);
   };
 
   const handleImportExcel = (file: File) => {
@@ -186,6 +197,10 @@ const RH: React.FC = () => {
 
   const handleEmployeeSelectionChange = (selectedIds: string[]) => {
     setSelectedEmployeeIds(selectedIds);
+  };
+
+  const handleEmployeeAdded = () => {
+    loadData(); // Recharger les données
   };
 
   if (loading) {
@@ -520,16 +535,30 @@ const RH: React.FC = () => {
           )}
 
           {activeSection === 'configuration' && (
-            <Card variant="elevated">
-              <div className="p-6 text-center">
-                <ChartBarIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Module Configuration</h3>
-                <p className="text-gray-600">Fonctionnalités en cours de développement</p>
-              </div>
-            </Card>
+            <div className="space-y-6">
+              <Card variant="elevated">
+                <div className="p-6">
+                  <h2 className="text-2xl font-bold text-hotaly-primary mb-6">Configuration RH</h2>
+                  <p className="text-gray-600 mb-8">
+                    Gestion des paramètres et configurations du module Ressources Humaines
+                  </p>
+                  
+                  <SalaryGridManager onGridsChange={setSalaryGrids} />
+                </div>
+              </Card>
+            </div>
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Modal d'ajout d'employé */}
+      <AddEmployeeModal
+        isOpen={isAddEmployeeModalOpen}
+        onClose={() => setIsAddEmployeeModalOpen(false)}
+        onSuccess={handleEmployeeAdded}
+        services={services}
+        salaryGrids={salaryGrids}
+      />
     </div>
   );
 };
