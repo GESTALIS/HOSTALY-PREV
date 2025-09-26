@@ -368,18 +368,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     required
                   >
                     <option value="">Sélectionner un service</option>
-                    {[
-                      { id: 1, name: "PDJ" },
-                      { id: 2, name: "Réception" },
-                      { id: 3, name: "Housekeeping" },
-                      { id: 4, name: "Bar Snack" },
-                      { id: 5, name: "Loisir" },
-                      { id: 6, name: "Bar Hôtel" },
-                      { id: 7, name: "Technique" },
-                      { id: 8, name: "Loisir Outdoor (Piscine)" },
-                      { id: 9, name: "Loisir Indoor" },
-                      { id: 10, name: "Caisse" }
-                    ].map((service) => (
+                    {services.map((service) => (
                       <option key={service.id} value={service.id}>
                         {service.name}
                       </option>
@@ -499,18 +488,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   Services polyvalents
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {[
-                    { id: 1, name: "PDJ", color: "#F59E0B" },
-                    { id: 2, name: "Réception", color: "#3B82F6" },
-                    { id: 3, name: "Housekeeping", color: "#10B981" },
-                    { id: 4, name: "Bar Snack", color: "#8B5CF6" },
-                    { id: 5, name: "Loisir", color: "#F97316" },
-                    { id: 6, name: "Bar Hôtel", color: "#EC4899" },
-                    { id: 7, name: "Technique", color: "#6B7280" },
-                    { id: 8, name: "Loisir Outdoor (Piscine)", color: "#06B6D4" },
-                    { id: 9, name: "Loisir Indoor", color: "#84CC16" },
-                    { id: 10, name: "Caisse", color: "#EF4444" }
-                  ].map((service) => {
+                  {services.map((service) => {
                     // Vérifier si ce service est le service principal
                     const isMainService = service.id === parseInt(formData.mainServiceId);
                     
