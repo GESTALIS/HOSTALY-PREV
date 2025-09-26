@@ -8,24 +8,179 @@ datasource db {
 }
 
 model Hotel {
-  id     Int    @id @default(autoincrement())
-  name   String
-  rooms  Int
+  id    Int    @id @default(autoincrement())
+  name  String
+  rooms Int
 }
 
 model CalendarDate {
-  date            DateTime @id
-  season          Season
-  zoneAIsHoliday  Boolean
+  date           DateTime @id
+  season         Season
+  zoneAIsHoliday Boolean
 }
 
 model Scenario {
-  id           Int     @id @default(autoincrement())
+  id           Int                 @id @default(autoincrement())
   name         String
-  horizonYears Int     @default(5)
-  isActive     Boolean @default(false)
-  revenues     RevenueAssumption[]
+  horizonYears Int                 @default(5)
+  isActive     Boolean             @default(false)
   charges      ChargeAssumption[]
+  revenues     RevenueAssumption[]
+}
+
+model RevenueAssumption {
+  id              Int        @id @default(autoincrement())
+  scenarioId      Int
+  department      Department
+  season          Season
+  adr             Decimal?   @db.Decimal(10, 2)
+  occupancy       Decimal?   @db.Decimal(5, 2)
+  spendPerOccRoom Decimal?   @db.Decimal(10, 2)
+  scenario        Scenario   @relation(fields: [scenarioId], references: [id])
+}
+
+model ChargeAssumption {
+  id         Int            @id @default(autoincrement())
+  scenarioId Int
+  category   ChargeCategory
+  department Department
+  basis      Basis
+  amount     Decimal        @db.Decimal(12, 2)
+  season     Season
+  capexYears Int?
+  scenario   Scenario       @relation(fields: [scenarioId], references: [id])
+}
+
+model SalaryGrid {
+  id           Int        @id @default(autoincrement())
+  level        Int
+  echelon      Int
+  hourlyRate   Decimal    @db.Decimal(8, 2)
+  daysOff      Int
+  vacationDays Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  employees    Employee[]
+}
+
+model Service {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  type                ServiceType
+  color               String                @default("#eca08e")
+  createdAt           DateTime              @default(now())
+  isActive            Boolean               @default(true)
+  updatedAt           DateTime              @updatedAt
+  employees           Employee[]
+  polyvalentEmployees EmployeePolyvalence[]
+  openings            OpeningWindow[]
+  schedules           ServiceSchedule[]
+  staffingRules       StaffingRule[]
+}
+
+model ServiceSchedule {
+  id          Int      @id @default(autoincrement())
+  serviceId   Int
+  season      Season
+  dayOfWeek   Int
+  openTime    String
+  closeTime   String
+  isHoliday   Boolean  @default(false)
+  isException Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  service     Service  @relation(fields: [serviceId], references: [id])
+}
+
+model Employee {
+  id                 Int                   @id @default(autoincrement())
+  firstName          String
+  lastName           String
+  mainServiceId      Int
+  contractType       ContractType
+  weeklyHours        WeeklyHours
+  salaryGridId       Int
+  isActive           Boolean               @default(true)
+  flexibilityType    FlexibilityType       @default(STANDARD)
+  minWeeklyHours     Int?                 @default(0)
+  maxWeeklyHours     Int?                 @default(35)
+  preferredShifts    String[]             @default([])
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  mainService        Service              @relation(fields: [mainServiceId], references: [id])
+  salaryGrid         SalaryGrid           @relation(fields: [salaryGridId], references: [id])
+  polyvalentServices EmployeePolyvalence[]
+  schedules          EmployeeSchedule[]
+}
+
+model EmployeePolyvalence {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  serviceId  Int
+  createdAt  DateTime @default(now())
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  service    Service  @relation(fields: [serviceId], references: [id])
+}
+
+model EmployeeSchedule {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  date       DateTime
+  startTime  String
+  endTime    String
+  breakTime  Int      @default(30)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  employee   Employee @relation(fields: [employeeId], references: [id])
+}
+
+model OpeningWindow {
+  id        Int     @id @default(autoincrement())
+  serviceId Int
+  season    Season
+  dow       Int
+  openTime  String
+  closeTime String
+  service   Service @relation(fields: [serviceId], references: [id])
+}
+
+model StaffingRule {
+  id            Int     @id @default(autoincrement())
+  serviceId     Int
+  coveragePosts Int
+  service       Service @relation(fields: [serviceId], references: [id])
+}
+
+model PayrollAssumption {
+  id               Int     @id @default(autoincrement())
+  role             String
+  baseMonthlyGross Decimal @db.Decimal(12, 2)
+  employerRate     Decimal @db.Decimal(5, 2)
+  weeklyNormHours  Int
+}
+
+model ScenarioResultMonthly {
+  id             Int      @id @default(autoincrement())
+  scenarioId     Int
+  year           Int
+  month          Int
+  roomsAvailable Int?
+  roomsSold      Int?
+  adr            Decimal? @db.Decimal(10, 2)
+  revpar         Decimal? @db.Decimal(10, 2)
+  trevpar        Decimal? @db.Decimal(10, 2)
+  caHebergement  Decimal? @db.Decimal(12, 2)
+  caFnb          Decimal? @db.Decimal(12, 2)
+  caSpa          Decimal? @db.Decimal(12, 2)
+  caMice         Decimal? @db.Decimal(12, 2)
+  caAutres       Decimal? @db.Decimal(12, 2)
+  caTotal        Decimal? @db.Decimal(12, 2)
+  payrollTotal   Decimal? @db.Decimal(12, 2)
+  opexTotal      Decimal? @db.Decimal(12, 2)
+  capexAmort     Decimal? @db.Decimal(12, 2)
+  gop            Decimal? @db.Decimal(12, 2)
+  ebitda         Decimal? @db.Decimal(12, 2)
+  resultatNet    Decimal? @db.Decimal(12, 2)
 }
 
 enum Season {
@@ -55,31 +210,6 @@ enum Basis {
   MONTANT
 }
 
-model RevenueAssumption {
-  id          Int        @id @default(autoincrement())
-  scenario    Scenario   @relation(fields: [scenarioId], references: [id])
-  scenarioId  Int
-  department  Department
-  season      Season
-  adr         Decimal?   @db.Decimal(10,2)
-  occupancy   Decimal?   @db.Decimal(5,2)
-  spendPerOccRoom Decimal? @db.Decimal(10,2)
-}
-
-model ChargeAssumption {
-  id          Int            @id @default(autoincrement())
-  scenario    Scenario       @relation(fields: [scenarioId], references: [id])
-  scenarioId  Int
-  category    ChargeCategory
-  department  Department
-  basis       Basis
-  amount      Decimal        @db.Decimal(12,2)
-  season      Season
-  capexYears  Int?
-}
-
-// === MODULE RH - NOUVELLES TABLES ===
-
 enum ContractType {
   CDI
   CDD
@@ -95,137 +225,12 @@ enum WeeklyHours {
   H39_MODULABLE
 }
 
-model SalaryGrid {
-  id           Int     @id @default(autoincrement())
-  level        Int     // Niveau
-  echelon      Int     // Échelon
-  hourlyRate   Decimal @db.Decimal(8,2) // Salaire horaire brut
-  daysOff      Int     // Jours de repos annuels
-  vacationDays Int     // Jours de congés annuels
-  employees    Employee[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model Service {
-  id          Int     @id @default(autoincrement())
-  name        String
-  type        ServiceType
-  color       String  @default("#eca08e") // Code couleur (rose saumon par défaut)
-  isActive    Boolean @default(true)
-  openings    OpeningWindow[]
-  staffingRules StaffingRule[]
-  schedules   ServiceSchedule[]
-  employees   Employee[]
-  polyvalentEmployees EmployeePolyvalence[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model ServiceSchedule {
-  id          Int      @id @default(autoincrement())
-  service     Service  @relation(fields: [serviceId], references: [id])
-  serviceId   Int
-  season      Season
-  dayOfWeek   Int      // 0-6 (dimanche-samedi)
-  openTime    String   // Format "HH:MM"
-  closeTime   String   // Format "HH:MM"
-  isHoliday   Boolean  @default(false) // Exception jour férié
-  isException Boolean  @default(false) // Exception événement/vacances
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Employee {
-  id                    Int           @id @default(autoincrement())
-  firstName             String
-  lastName              String
-  mainService           Service       @relation(fields: [mainServiceId], references: [id])
-  mainServiceId         Int
-  contractType          ContractType
-  weeklyHours           WeeklyHours
-  salaryGrid            SalaryGrid    @relation(fields: [salaryGridId], references: [id])
-  salaryGridId          Int
-  isActive              Boolean       @default(true)
-  polyvalentServices    EmployeePolyvalence[]
-  schedules             EmployeeSchedule[]
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-}
-
-model EmployeePolyvalence {
-  id          Int      @id @default(autoincrement())
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  employeeId  Int
-  service     Service  @relation(fields: [serviceId], references: [id])
-  serviceId   Int
-  createdAt   DateTime @default(now())
-}
-
-model EmployeeSchedule {
-  id          Int      @id @default(autoincrement())
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  employeeId  Int
-  date        DateTime
-  startTime   String   // Format "HH:MM" - Heure début salarié
-  endTime     String   // Format "HH:MM" - Heure fin salarié
-  breakTime   Int      @default(30) // Pause en minutes (30 min par défaut)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+enum FlexibilityType {
+  STANDARD
+  PART_TIME
 }
 
 enum ServiceType {
   RESTAURATION
   AUTRE
 }
-
-model OpeningWindow {
-  id        Int     @id @default(autoincrement())
-  service   Service @relation(fields: [serviceId], references: [id])
-  serviceId Int
-  season    Season
-  dow       Int     // 0-6
-  openTime  String
-  closeTime String
-}
-
-model StaffingRule {
-  id             Int     @id @default(autoincrement())
-  service        Service @relation(fields: [serviceId], references: [id])
-  serviceId      Int
-  coveragePosts  Int
-}
-
-model PayrollAssumption {
-  id                Int     @id @default(autoincrement())
-  role              String
-  baseMonthlyGross  Decimal @db.Decimal(12,2)
-  employerRate      Decimal @db.Decimal(5,2)
-  weeklyNormHours   Int
-}
-
-model ScenarioResultMonthly {
-  id           Int      @id @default(autoincrement())
-  scenarioId   Int
-  year         Int
-  month        Int
-  roomsAvailable Int?
-  roomsSold      Int?
-  adr            Decimal? @db.Decimal(10,2)
-  revpar         Decimal? @db.Decimal(10,2)
-  trevpar        Decimal? @db.Decimal(10,2)
-  caHebergement  Decimal? @db.Decimal(12,2)
-  caFnb          Decimal? @db.Decimal(12,2)
-  caSpa          Decimal? @db.Decimal(12,2)
-  caMice         Decimal? @db.Decimal(12,2)
-  caAutres       Decimal? @db.Decimal(12,2)
-  caTotal        Decimal? @db.Decimal(12,2)
-  payrollTotal   Decimal? @db.Decimal(12,2)
-  opexTotal      Decimal? @db.Decimal(12,2)
-  capexAmort     Decimal? @db.Decimal(12,2)
-  gop            Decimal? @db.Decimal(12,2)
-  ebitda         Decimal? @db.Decimal(12,2)
-  resultatNet    Decimal? @db.Decimal(12,2)
-}
-
-

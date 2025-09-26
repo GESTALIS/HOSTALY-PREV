@@ -31,8 +31,8 @@ const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 app.use(
   pinoHttp({
     logger,
-    genReqId: (req) => (req.headers['x-request-id'] || uuidv4()),
-    customProps: (req) => ({ requestId: req.id }),
+    genReqId: (req: any) => (req.headers['x-request-id'] || uuidv4()),
+    customProps: (req: any) => ({ requestId: req.id }),
   })
 );
 
@@ -40,9 +40,9 @@ app.use(
 app.use('/api/v1', apiRouter);
 
 // Error handler
-app.use((err, _req, res, _next) => {
+app.use((err: any, _req: any, res: any, _next: any) => {
   const status = err.status || 500;
-  const payload = {
+  const payload: any = {
     code: err.code || (status === 500 ? 'INTERNAL_SERVER_ERROR' : 'ERROR'),
     message: err.message || 'Une erreur est survenue',
   };

@@ -5,7 +5,7 @@ const { scenariosRouter } = require('./scenarios');
 const { calendarRouter } = require('./calendar');
 const { resultsRouter } = require('./results');
 const { simulateRouter } = require('./simulate');
-const { rhRouter } = require('./rh');
+const rhRouter = require('./rh');
 
 const router = Router();
 

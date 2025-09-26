@@ -12,6 +12,7 @@
     "db": "docker compose --env-file .env.ports up -d && npm run -w backend prisma:migrate && npm run -w backend prisma:seed",
     "api": "npm run -w backend dev",
     "front": "npm run -w frontend dev",
+    "quick": "node scripts/quick-start.cjs",
     "shutdown": "node scripts/shutdown.cjs",
     "close": "node scripts/shutdown.cjs"
   },
@@ -20,5 +21,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
   }
 }

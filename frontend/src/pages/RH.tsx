@@ -27,6 +27,7 @@ import EmployeeActions from '../components/rh/EmployeeActions';
 import EmployeeTable from '../components/rh/EmployeeTable';
 import AddEmployeeModal from '../components/employees/AddEmployeeModal';
 import SalaryGridManager from '../components/rh/SalaryGridManager';
+import FlexibilityAlerts from '../components/rh/FlexibilityAlerts';
 
 interface Employee {
   id: number;
@@ -51,6 +52,10 @@ interface Employee {
       name: string;
     };
   }>;
+  flexibilityType?: string;
+  minWeeklyHours?: number;
+  maxWeeklyHours?: number;
+  preferredShifts?: string[];
 }
 
 interface Service {
@@ -95,7 +100,6 @@ const RH: React.FC = () => {
     hourlyRate: number;
   }>>([]);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const sections = [
@@ -161,7 +165,7 @@ const RH: React.FC = () => {
   // Fonctions pour les composants avancés
   const handleEmployeeFiltersChange = (filters: any) => {
     setEmployeeFilters(filters);
-    // Ici vous pouvez implémenter la logique de filtrage avancée
+    setSearchTerm(filters.search); // Synchroniser avec le filtre de recherche
   };
 
   const handleAddEmployee = () => {
@@ -185,25 +189,15 @@ const RH: React.FC = () => {
 
   const handleEditEmployee = (employee: any) => {
     setSelectedEmployee(employee);
-    setIsEditModalOpen(true);
+    setIsAddEmployeeModalOpen(true); // Utiliser le même modal
   };
 
   const handleDeleteEmployee = async (employee: any) => {
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'employé ${employee.firstName} ${employee.lastName} ?`)) {
       try {
-        const response = await fetch(`/api/v1/rh/employees/${employee.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          loadData(); // Recharger les données
-          alert('Employé supprimé avec succès');
-        } else {
-          alert('Erreur lors de la suppression de l\'employé');
-        }
+        await api.delete(`/rh/employees/${employee.id}`);
+        loadData(); // Recharger les données
+        alert('Employé supprimé avec succès');
       } catch (error) {
         console.error('Erreur:', error);
         alert('Erreur lors de la suppression de l\'employé');
@@ -418,6 +412,12 @@ const RH: React.FC = () => {
                 </Card>
               </div>
 
+              {/* Alertes de flexibilité */}
+              <FlexibilityAlerts 
+                employees={employees} 
+                currentWeekHours={{}} // Dans une vraie app, on récupérerait les heures actuelles
+              />
+
               {/* Actions rapides */}
               <Card variant="elevated">
                 <div className="p-6">
@@ -575,10 +575,14 @@ const RH: React.FC = () => {
       {/* Modals intégrés directement */}
       <AddEmployeeModal
         isOpen={isAddEmployeeModalOpen}
-        onClose={() => setIsAddEmployeeModalOpen(false)}
+        onClose={() => {
+          setIsAddEmployeeModalOpen(false);
+          setSelectedEmployee(null); // Réinitialiser l'employé sélectionné
+        }}
         onSuccess={handleEmployeeAdded}
         services={services}
         salaryGrids={salaryGrids}
+        employeeToEdit={selectedEmployee}
       />
 
       {/* Modal de visualisation intégré */}
@@ -638,44 +642,6 @@ const RH: React.FC = () => {
         </div>
       )}
 
-      {/* Modal d'édition intégré */}
-      {isEditModalOpen && selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-lg font-semibold">Modifier l'employé</h3>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-600 mb-4">
-                Modification de {selectedEmployee.firstName} {selectedEmployee.lastName}
-              </p>
-              <p className="text-sm text-gray-500">
-                Fonctionnalité d'édition en cours de développement...
-              </p>
-            </div>
-            <div className="flex justify-end p-6 border-t">
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 mr-2"
-              >
-                Annuler
-              </button>
-              <button
-                className="px-4 py-2 bg-hotaly-primary text-white rounded hover:bg-hotaly-primary-dark"
-                disabled
-              >
-                Modifier
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -25,14 +25,13 @@ const Card: React.FC<CardProps> = ({
     gradient: "bg-gradient-to-br from-white to-hotaly-neutral/30 border-hotaly-primary/10"
   };
   
-  const hoverClasses = hover ? "hover:-translate-y-1 hover:scale-[1.02]" : "";
+  const hoverClasses = hover ? "hover:-translate-y-1" : "";
   
   const classes = `${baseClasses} ${variantClasses[variant]} ${hoverClasses} ${className}`;
   
   return (
     <motion.div
-      whileHover={hover ? { y: -4, scale: 1.02 } : {}}
-      whileTap={{ scale: 0.98 }}
+      whileHover={hover ? { y: -4 } : {}}
       className={classes}
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default' }}

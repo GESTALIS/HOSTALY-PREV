@@ -26,6 +26,10 @@ interface Employee {
   annualLeave: number;
   isPolyvalent: boolean;
   isActive: boolean;
+  flexibilityType?: string;
+  minWeeklyHours?: number;
+  maxWeeklyHours?: number;
+  preferredShifts?: string[];
 }
 
 interface EmployeeTableProps {
@@ -178,6 +182,10 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                 </div>
               </th>
 
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Flexibilité
+              </th>
+
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('contractType')}
@@ -254,6 +262,36 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                         {employee.mainService.name}
                       </span>
                     </div>
+                  </td>
+
+                  {/* Flexibilité */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        employee.flexibilityType === 'STANDARD' 
+                          ? 'bg-gray-100 text-gray-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {employee.flexibilityType === 'STANDARD' ? '🕐 Standard' : '📉 Mi-temps'}
+                      </span>
+                      {employee.flexibilityType === 'PART_TIME' && employee.minWeeklyHours && employee.maxWeeklyHours && (
+                        <span className="text-xs text-gray-500">
+                          {employee.minWeeklyHours}h-{employee.maxWeeklyHours}h
+                        </span>
+                      )}
+                    </div>
+                    {employee.preferredShifts && employee.preferredShifts.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {employee.preferredShifts.map(shift => (
+                          <span key={shift} className="text-xs text-gray-500">
+                            {shift === 'matin' && '🌅'}
+                            {shift === 'soir' && '🌆'}
+                            {shift === 'weekend' && '📅'}
+                            {shift === 'nuit' && '🌙'}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
 
                   {/* Type de contrat */}
