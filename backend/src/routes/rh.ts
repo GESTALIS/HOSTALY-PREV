@@ -200,7 +200,7 @@ rhRouter.get('/services', async (req, res, next) => {
           ]
         },
         _count: {
-          select: {
+      select: {
             employees: true
           }
         }
@@ -215,6 +215,14 @@ rhRouter.post('/services', async (req, res, next) => {
   try {
     const { name, type, color, isActive = true, schedules = [] } = req.body;
 
+    // Validation basique
+    if (!name || !type) {
+      return res.status(400).json({
+        code: 'MISSING_REQUIRED_FIELDS',
+        message: 'Le nom et le type sont obligatoires'
+      });
+    }
+
     // Vérifier que le nom est unique
     const existingService = await prisma.service.findFirst({
       where: { name: { equals: name, mode: 'insensitive' } }
@@ -227,22 +235,13 @@ rhRouter.post('/services', async (req, res, next) => {
       });
     }
 
+    // Créer le service sans horaires d'abord
     const service = await prisma.service.create({
       data: {
         name,
         type,
         color: color || '#eca08e',
-        isActive,
-        schedules: {
-          create: schedules.map((schedule: any) => ({
-            season: schedule.season,
-            dayOfWeek: schedule.dayOfWeek,
-            openTime: schedule.openTime,
-            closeTime: schedule.closeTime,
-            isHoliday: schedule.isHoliday || false,
-            isException: schedule.isException || false
-          }))
-        }
+        isActive
       },
       include: {
         schedules: {
@@ -259,8 +258,47 @@ rhRouter.post('/services', async (req, res, next) => {
       }
     });
 
-    res.status(201).json(service);
-  } catch (e) { next(e); }
+    // Ajouter les horaires si fournis
+    if (schedules && schedules.length > 0) {
+      await prisma.serviceSchedule.createMany({
+        data: schedules.map((schedule: any) => ({
+          serviceId: service.id,
+          season: schedule.season,
+          dayOfWeek: schedule.dayOfWeek,
+          openTime: schedule.openTime,
+          closeTime: schedule.closeTime,
+          isHoliday: schedule.isHoliday || false,
+          isException: schedule.isException || false,
+          staffStartTime: schedule.staffStartTime || null,
+          staffEndTime: schedule.staffEndTime || null,
+          isStaffClosed: schedule.isStaffClosed || false
+        }))
+      });
+    }
+
+    // Récupérer le service complet avec horaires
+    const completeService = await prisma.service.findUnique({
+      where: { id: service.id },
+      include: {
+        schedules: {
+          orderBy: [
+            { season: 'asc' },
+            { dayOfWeek: 'asc' }
+          ]
+        },
+        _count: {
+          select: {
+            employees: true
+          }
+        }
+      }
+    });
+
+    res.status(201).json(completeService);
+  } catch (e) { 
+    console.error('Erreur création service:', e);
+    next(e); 
+  }
 });
 
 // PUT /api/v1/rh/services/:id - Modifier un service
@@ -268,6 +306,14 @@ rhRouter.put('/services/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, type, color, isActive, schedules = [] } = req.body;
+
+    // Validation basique
+    if (!name || !type) {
+      return res.status(400).json({
+        code: 'MISSING_REQUIRED_FIELDS',
+        message: 'Le nom et le type sont obligatoires'
+      });
+    }
 
     // Vérifier que le service existe
     const existingService = await prisma.service.findUnique({
@@ -298,29 +344,43 @@ rhRouter.put('/services/:id', async (req, res, next) => {
       }
     }
 
-    // Supprimer les anciens horaires
-    await prisma.serviceSchedule.deleteMany({
-      where: { serviceId: parseInt(id) }
-    });
-
+    // Mettre à jour le service
     const service = await prisma.service.update({
       where: { id: parseInt(id) },
       data: {
         name,
         type,
         color,
-        isActive,
-        schedules: {
-          create: schedules.map((schedule: any) => ({
-            season: schedule.season,
-            dayOfWeek: schedule.dayOfWeek,
-            openTime: schedule.openTime,
-            closeTime: schedule.closeTime,
-            isHoliday: schedule.isHoliday || false,
-            isException: schedule.isException || false
-          }))
-        }
-      },
+        isActive
+      }
+    });
+
+    // Supprimer les anciens horaires
+    await prisma.serviceSchedule.deleteMany({
+      where: { serviceId: parseInt(id) }
+    });
+
+    // Ajouter les nouveaux horaires si fournis
+    if (schedules && schedules.length > 0) {
+      await prisma.serviceSchedule.createMany({
+        data: schedules.map((schedule: any) => ({
+          serviceId: parseInt(id),
+          season: schedule.season,
+          dayOfWeek: schedule.dayOfWeek,
+          openTime: schedule.openTime,
+          closeTime: schedule.closeTime,
+          isHoliday: schedule.isHoliday || false,
+          isException: schedule.isException || false,
+          staffStartTime: schedule.staffStartTime || null,
+          staffEndTime: schedule.staffEndTime || null,
+          isStaffClosed: schedule.isStaffClosed || false
+        }))
+      });
+    }
+
+    // Récupérer le service complet avec horaires
+    const completeService = await prisma.service.findUnique({
+      where: { id: parseInt(id) },
       include: {
         schedules: {
           orderBy: [
@@ -336,14 +396,25 @@ rhRouter.put('/services/:id', async (req, res, next) => {
       }
     });
 
-    res.json(service);
-  } catch (e) { next(e); }
+    res.json(completeService);
+  } catch (e) { 
+    console.error('Erreur modification service:', e);
+    next(e); 
+  }
 });
 
 // DELETE /api/v1/rh/services/:id - Supprimer un service
 rhRouter.delete('/services/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // Validation de l'ID
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        code: 'INVALID_ID',
+        message: 'ID de service invalide'
+      });
+    }
 
     // Vérifier que le service existe
     const existingService = await prisma.service.findUnique({
@@ -364,11 +435,40 @@ rhRouter.delete('/services/:id', async (req, res, next) => {
       });
     }
 
-    // Vérifier qu'aucun employé n'est assigné à ce service
-    if (existingService._count.employees > 0) {
+    // Vérifier qu'aucun employé n'est assigné à ce service (service principal)
+    const employeesWithMainService = await prisma.employee.count({
+      where: { mainServiceId: parseInt(id) }
+    });
+
+    // Vérifier qu'aucun employé n'est polyvalent dans ce service
+    const employeesWithPolyvalentService = await prisma.employeePolyvalence.count({
+      where: { serviceId: parseInt(id) }
+    });
+
+    const totalEmployees = employeesWithMainService + employeesWithPolyvalentService;
+
+    if (totalEmployees > 0) {
+      // Récupérer les détails des employés assignés
+      const mainServiceEmployees = await prisma.employee.findMany({
+        where: { mainServiceId: parseInt(id) },
+        select: { id: true, firstName: true, lastName: true }
+      });
+
+      const polyvalentEmployees = await prisma.employee.findMany({
+        where: {
+          polyvalentServices: {
+            some: { serviceId: parseInt(id) }
+          }
+        },
+        select: { id: true, firstName: true, lastName: true }
+      });
+
+      const allEmployees = [...mainServiceEmployees, ...polyvalentEmployees];
+      const employeeNames = allEmployees.map(emp => `${emp.firstName} ${emp.lastName}`).join(', ');
+
       return res.status(400).json({
         code: 'SERVICE_HAS_EMPLOYEES',
-        message: 'Impossible de supprimer un service qui a des employés assignés'
+        message: `Impossible de supprimer le service "${existingService.name}" car ${totalEmployees} employé(s) y sont assignés : ${employeeNames}`
       });
     }
 
@@ -382,8 +482,13 @@ rhRouter.delete('/services/:id', async (req, res, next) => {
       where: { id: parseInt(id) }
     });
 
-    res.status(204).send();
-  } catch (e) { next(e); }
+    res.status(200).json({
+      message: `Service "${existingService.name}" supprimé avec succès`
+    });
+  } catch (e) { 
+    console.error('Erreur suppression service:', e);
+    next(e); 
+  }
 });
 
 // === GESTION SAISONNALITÉ GUYANE ===

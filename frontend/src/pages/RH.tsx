@@ -224,12 +224,22 @@ const RH: React.FC = () => {
   const handleDeleteService = async (service: any) => {
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer le service "${service.name}" ?`)) {
       try {
-        await api.delete(`/rh/services/${service.id}`);
+        const response = await api.delete(`/rh/services/${service.id}`);
+        console.log('✅ Service supprimé:', response);
         loadData(); // Recharger les données
-        alert('Service supprimé avec succès');
-      } catch (error) {
-        console.error('Erreur:', error);
-        alert('Erreur lors de la suppression du service');
+        alert(response.data?.message || 'Service supprimé avec succès');
+      } catch (error: any) {
+        console.error('❌ Erreur détaillée:', error);
+        console.error('❌ Status:', error.response?.status);
+        console.error('❌ Message:', error.response?.data);
+        
+        if (error.response?.status === 400) {
+          alert(`❌ ${error.response.data.message}`);
+        } else if (error.response?.status === 404) {
+          alert(`❌ Service "${service.name}" non trouvé`);
+        } else {
+          alert(`❌ Erreur lors de la suppression du service : ${error.response?.data?.message || error.message}`);
+        }
       }
     }
   };

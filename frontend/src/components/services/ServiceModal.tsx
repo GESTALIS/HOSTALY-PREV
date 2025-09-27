@@ -9,6 +9,7 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 import Button from '../ui/Button';
+import api from '../../lib/api';
 
 interface Service {
   id: number;
@@ -42,10 +43,10 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: '',
-    type: 'RESTAURANT',
+    type: 'RESTAURATION',
     color: '#eca08e',
     isActive: true,
-    seasonalityMode: 'SIMPLE' as 'SIMPLE' | 'DUAL'
+    seasonalityMode: 'DUAL' as 'SIMPLE' | 'DUAL'
   });
 
   const [schedules, setSchedules] = useState<Array<{
@@ -55,6 +56,9 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
     closeTime: string;
     isHoliday: boolean;
     isException: boolean;
+    staffStartTime: string;
+    staffEndTime: string;
+    isStaffClosed: boolean;
   }>>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,13 +74,8 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
   ];
 
   const serviceTypes = [
-    { value: 'RESTAURANT', label: 'Restaurant' },
-    { value: 'BAR', label: 'Bar' },
-    { value: 'RECEPTION', label: 'Réception' },
-    { value: 'HOUSEKEEPING', label: 'Housekeeping' },
-    { value: 'TECHNIQUE', label: 'Technique' },
-    { value: 'LOISIR', label: 'Loisir' },
-    { value: 'CAISSE', label: 'Caisse' }
+    { value: 'RESTAURATION', label: 'Restauration' },
+    { value: 'AUTRE', label: 'Autre' }
   ];
 
   const colors = [
@@ -92,19 +91,53 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
         type: serviceToEdit.type,
         color: serviceToEdit.color,
         isActive: serviceToEdit.isActive,
-        seasonalityMode: serviceToEdit.schedules.some(s => s.season === 'HAUTE') ? 'DUAL' : 'SIMPLE'
+        seasonalityMode: 'DUAL'
       });
       setSchedules(serviceToEdit.schedules);
     } else {
-      // Horaires par défaut pour un nouveau service
-      const defaultSchedules = daysOfWeek.map(day => ({
-        season: 'BASSE' as 'BASSE' | 'HAUTE',
-        dayOfWeek: day.id,
-        openTime: '08:00',
-        closeTime: '18:00',
-        isHoliday: false,
-        isException: false
-      }));
+      // Horaires par défaut pour un nouveau service - Basse et Haute saison
+      const defaultSchedules: Array<{
+        season: 'BASSE' | 'HAUTE';
+        dayOfWeek: number;
+        openTime: string;
+        closeTime: string;
+        isHoliday: boolean;
+        isException: boolean;
+        staffStartTime: string;
+        staffEndTime: string;
+        isStaffClosed: boolean;
+      }> = [];
+      
+      // Ajouter les horaires pour basse saison
+      daysOfWeek.forEach(day => {
+        defaultSchedules.push({
+          season: 'BASSE',
+          dayOfWeek: day.id,
+          openTime: '08:00',
+          closeTime: '18:00',
+          isHoliday: false,
+          isException: false,
+          staffStartTime: '07:30',
+          staffEndTime: '19:00',
+          isStaffClosed: false
+        });
+      });
+      
+      // Ajouter les horaires pour haute saison
+      daysOfWeek.forEach(day => {
+        defaultSchedules.push({
+          season: 'HAUTE',
+          dayOfWeek: day.id,
+          openTime: '08:00',
+          closeTime: '18:00',
+          isHoliday: false,
+          isException: false,
+          staffStartTime: '07:00',
+          staffEndTime: '20:00',
+          isStaffClosed: false
+        });
+      });
+      
       setSchedules(defaultSchedules);
     }
   }, [serviceToEdit]);
@@ -134,7 +167,10 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
       openTime: '08:00',
       closeTime: '18:00',
       isHoliday: false,
-      isException: false
+      isException: false,
+      staffStartTime: season === 'BASSE' ? '07:30' : '07:00',
+      staffEndTime: season === 'BASSE' ? '19:00' : '20:00',
+      isStaffClosed: false
     };
     setSchedules(prev => [...prev, newSchedule]);
   };
@@ -174,47 +210,39 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
 
     try {
       const url = serviceToEdit 
-        ? `/api/v1/rh/services/${serviceToEdit.id}`
-        : '/api/v1/rh/services';
+        ? `/rh/services/${serviceToEdit.id}`
+        : '/rh/services';
       
       const method = serviceToEdit ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await api({
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
+        url,
+        data: {
           ...formData,
           schedules: schedules
-        })
+        }
       });
 
-      if (response.ok) {
-        onSuccess();
-        onClose();
-        alert(serviceToEdit ? 'Service modifié avec succès' : 'Service créé avec succès');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la sauvegarde');
-      }
-    } catch (error) {
+      onSuccess();
+      onClose();
+      alert(serviceToEdit ? 'Service modifié avec succès' : 'Service créé avec succès');
+    } catch (error: any) {
       console.error('Erreur:', error);
-      alert('Erreur lors de la sauvegarde du service');
+      alert(error.response?.data?.message || 'Erreur lors de la sauvegarde du service');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      type: 'RESTAURANT',
-      color: '#eca08e',
-      isActive: true,
-      seasonalityMode: 'SIMPLE'
-    });
+      setFormData({
+        name: '',
+        type: 'RESTAURATION',
+        color: '#eca08e',
+        isActive: true,
+        seasonalityMode: 'DUAL'
+      });
     setSchedules([]);
     onClose();
   };
@@ -332,35 +360,17 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
                 </div>
               </div>
 
-              {/* Saisonnalité */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mode de saisonnalité
-                </label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="seasonalityMode"
-                      value="SIMPLE"
-                      checked={formData.seasonalityMode === 'SIMPLE'}
-                      onChange={handleInputChange}
-                      className="w-4 h-4 text-hotaly-primary border-gray-300 focus:ring-hotaly-primary"
-                    />
-                    <span className="text-sm text-gray-700">Simple (une seule grille)</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="seasonalityMode"
-                      value="DUAL"
-                      checked={formData.seasonalityMode === 'DUAL'}
-                      onChange={handleInputChange}
-                      className="w-4 h-4 text-hotaly-primary border-gray-300 focus:ring-hotaly-primary"
-                    />
-                    <span className="text-sm text-gray-700">Dual (Basse/Haute saison)</span>
-                  </label>
+              {/* Saisonnalité - Toujours en mode DUAL */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                  <span className="text-sm font-medium text-blue-900">
+                    Mode saisonnalité : Dual (Basse/Haute saison)
+                  </span>
                 </div>
+                <p className="text-xs text-blue-700 mt-1">
+                  Les horaires sont configurés selon les vacances scolaires de Guyane
+                </p>
               </div>
 
               {/* Grille horaires */}
@@ -399,138 +409,163 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-medium text-gray-900">{day.name}</h4>
                         <div className="flex space-x-2">
-                          {formData.seasonalityMode === 'DUAL' && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyDaySchedule(1, day.id, 'BASSE')}
-                            >
-                              Copier Lundi
-                            </Button>
-                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyDaySchedule(1, day.id, 'BASSE')}
+                          >
+                            Copier Lundi
+                          </Button>
                         </div>
                       </div>
 
-                      {formData.seasonalityMode === 'SIMPLE' ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Ouverture
-                            </label>
-                            <input
-                              type="time"
-                              value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.openTime || '08:00'}
-                              onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'openTime', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Fermeture
-                            </label>
-                            <input
-                              type="time"
-                              value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.closeTime || '18:00'}
-                              onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'closeTime', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
-                            />
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <label className="flex items-center space-x-2">
+                      <div className="space-y-3">
+                        {/* Basse saison - Horaires d'ouverture publique */}
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <h5 className="text-sm font-medium text-blue-900 mb-2">Basse saison - Horaires d'ouverture publique</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Ouverture publique
+                              </label>
                               <input
-                                type="checkbox"
-                                checked={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.isHoliday || false}
-                                onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'isHoliday', e.target.checked)}
-                                className="w-4 h-4 text-hotaly-primary border-gray-300 rounded focus:ring-hotaly-primary"
+                                type="time"
+                                value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.openTime || '08:00'}
+                                onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'openTime', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
                               />
-                              <span className="text-xs text-gray-600">Fermé</span>
-                            </label>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {/* Basse saison */}
-                          <div className="bg-blue-50 p-3 rounded-lg">
-                            <h5 className="text-sm font-medium text-blue-900 mb-2">Basse saison</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Ouverture
-                                </label>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Fermeture publique
+                              </label>
+                              <input
+                                type="time"
+                                value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.closeTime || '18:00'}
+                                onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'closeTime', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <label className="flex items-center space-x-2">
                                 <input
-                                  type="time"
-                                  value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.openTime || '08:00'}
-                                  onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'openTime', e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                                  type="checkbox"
+                                  checked={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.isHoliday || false}
+                                  onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'isHoliday', e.target.checked)}
+                                  className="w-4 h-4 text-hotaly-primary border-gray-300 rounded focus:ring-hotaly-primary"
                                 />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Fermeture
-                                </label>
-                                <input
-                                  type="time"
-                                  value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.closeTime || '18:00'}
-                                  onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'closeTime', e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
-                                />
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <label className="flex items-center space-x-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.isHoliday || false}
-                                    onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'isHoliday', e.target.checked)}
-                                    className="w-4 h-4 text-hotaly-primary border-gray-300 rounded focus:ring-hotaly-primary"
-                                  />
-                                  <span className="text-xs text-gray-600">Fermé</span>
-                                </label>
-                              </div>
+                                <span className="text-xs text-gray-600">Fermé</span>
+                              </label>
                             </div>
                           </div>
+                        </div>
 
-                          {/* Haute saison */}
-                          <div className="bg-orange-50 p-3 rounded-lg">
-                            <h5 className="text-sm font-medium text-orange-900 mb-2">Haute saison</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Ouverture
-                                </label>
+                        {/* Haute saison - Horaires d'ouverture publique */}
+                        <div className="bg-orange-50 p-3 rounded-lg">
+                          <h5 className="text-sm font-medium text-orange-900 mb-2">Haute saison - Horaires d'ouverture publique</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Ouverture publique
+                              </label>
+                              <input
+                                type="time"
+                                value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'HAUTE')?.openTime || '08:00'}
+                                onChange={(e) => handleScheduleChange(day.id, 'HAUTE', 'openTime', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Fermeture publique
+                              </label>
+                              <input
+                                type="time"
+                                value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'HAUTE')?.closeTime || '18:00'}
+                                onChange={(e) => handleScheduleChange(day.id, 'HAUTE', 'closeTime', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <label className="flex items-center space-x-2">
                                 <input
-                                  type="time"
-                                  value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'HAUTE')?.openTime || '08:00'}
-                                  onChange={(e) => handleScheduleChange(day.id, 'HAUTE', 'openTime', e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                                  type="checkbox"
+                                  checked={schedules.find(s => s.dayOfWeek === day.id && s.season === 'HAUTE')?.isHoliday || false}
+                                  onChange={(e) => handleScheduleChange(day.id, 'HAUTE', 'isHoliday', e.target.checked)}
+                                  className="w-4 h-4 text-hotaly-primary border-gray-300 rounded focus:ring-hotaly-primary"
                                 />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Fermeture
-                                </label>
-                                <input
-                                  type="time"
-                                  value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'HAUTE')?.closeTime || '18:00'}
-                                  onChange={(e) => handleScheduleChange(day.id, 'HAUTE', 'closeTime', e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
-                                />
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <label className="flex items-center space-x-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={schedules.find(s => s.dayOfWeek === day.id && s.season === 'HAUTE')?.isHoliday || false}
-                                    onChange={(e) => handleScheduleChange(day.id, 'HAUTE', 'isHoliday', e.target.checked)}
-                                    className="w-4 h-4 text-hotaly-primary border-gray-300 rounded focus:ring-hotaly-primary"
-                                  />
-                                  <span className="text-xs text-gray-600">Fermé</span>
-                                </label>
-                              </div>
+                                <span className="text-xs text-gray-600">Fermé</span>
+                              </label>
                             </div>
                           </div>
                         </div>
-                      )}
+
+                        {/* Horaires du personnel */}
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <h5 className="text-sm font-medium text-green-900 mb-2">Horaires du personnel (Basse/Haute saison)</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Arrivée personnel (Basse)
+                              </label>
+                              <input
+                                type="time"
+                                value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.staffStartTime || '07:30'}
+                                onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'staffStartTime', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Départ personnel (Basse)
+                              </label>
+                              <input
+                                type="time"
+                                value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.staffEndTime || '19:00'}
+                                onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'staffEndTime', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Arrivée personnel (Haute)
+                              </label>
+                              <input
+                                type="time"
+                                value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'HAUTE')?.staffStartTime || '07:00'}
+                                onChange={(e) => handleScheduleChange(day.id, 'HAUTE', 'staffStartTime', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Départ personnel (Haute)
+                              </label>
+                              <input
+                                type="time"
+                                value={schedules.find(s => s.dayOfWeek === day.id && s.season === 'HAUTE')?.staffEndTime || '20:00'}
+                                onChange={(e) => handleScheduleChange(day.id, 'HAUTE', 'staffEndTime', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={schedules.find(s => s.dayOfWeek === day.id && s.season === 'BASSE')?.isStaffClosed || false}
+                                  onChange={(e) => handleScheduleChange(day.id, 'BASSE', 'isStaffClosed', e.target.checked)}
+                                  className="w-4 h-4 text-hotaly-primary border-gray-300 rounded focus:ring-hotaly-primary"
+                                />
+                                <span className="text-xs text-gray-600">Personnel fermé</span>
+                              </label>
+                            </div>
+                          </div>
+                          <p className="text-xs text-green-700 mt-2">
+                            💡 Les horaires du personnel peuvent être personnalisés ou fermés indépendamment
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
