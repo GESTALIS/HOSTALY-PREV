@@ -31,6 +31,7 @@ import SalaryGridManager from '../components/rh/SalaryGridManager';
 import FlexibilityAlerts from '../components/rh/FlexibilityAlerts';
 import ServiceModal from '../components/services/ServiceModal';
 import RHConfiguration from '../components/rh/RHConfiguration';
+import HousekeepingModule from '../components/housekeeping/HousekeepingModule';
 
 interface Employee {
   id: number;
@@ -648,13 +649,7 @@ const RH: React.FC = () => {
           )}
 
           {activeSection === 'housekeeping' && (
-            <Card variant="elevated">
-              <div className="p-6 text-center">
-                <WrenchScrewdriverIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Module Housekeeping</h3>
-                <p className="text-gray-600">Fonctionnalités en cours de développement</p>
-              </div>
-            </Card>
+            <HousekeepingModule />
           )}
 
           {activeSection === 'planning' && (
