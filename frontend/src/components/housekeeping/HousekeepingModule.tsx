@@ -77,6 +77,22 @@ interface WeeklySchedule {
   totalWeeklyHours: number;
 }
 
+interface PlanningScenario {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  weekRef: string; // ex. "2025-W40"
+  type: 'propose' | 'propose_modifie';
+  payload: WeeklySchedule[]; // deep copy
+  breakDuration: number;
+  totals: { 
+    byEmployee: Record<string, number>; 
+    weekTotal: number;
+    deltaVsOriginal?: number;
+  };
+}
+
 interface AnnualPlanning {
   employeeId: number;
   employeeName: string;
@@ -148,9 +164,19 @@ const HousekeepingModule: React.FC = () => {
   const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
   const [validationData, setValidationData] = useState<any>(null);
   const [isExplanationModalOpen, setIsExplanationModalOpen] = useState(false);
-  const [isCustomPlanningMode, setIsCustomPlanningMode] = useState(false);
-  const [customSchedules, setCustomSchedules] = useState<WeeklySchedule[]>([]);
+  
+  // Nouveau système de planning unifié
+  const [planningStatus, setPlanningStatus] = useState<'readonly' | 'editing' | 'applied'>('readonly');
+  const [activePlanning, setActivePlanning] = useState<WeeklySchedule[]>([]);
+  const [originalPlanning, setOriginalPlanning] = useState<WeeklySchedule[]>([]);
   const [breakDuration, setBreakDuration] = useState(30); // en minutes
+  
+  // Scénarios et modales
+  const [scenarios, setScenarios] = useState<PlanningScenario[]>([]);
+  const [showSaveScenarioModal, setShowSaveScenarioModal] = useState(false);
+  const [showScenarioHistoryModal, setShowScenarioHistoryModal] = useState(false);
+  const [newScenarioName, setNewScenarioName] = useState('');
+  const [newScenarioDescription, setNewScenarioDescription] = useState('');
   
   // Données des employés Housekeeping avec jours de repos décalés
   const [employees, setEmployees] = useState<EmployeeSchedule[]>([
@@ -186,7 +212,6 @@ const HousekeepingModule: React.FC = () => {
     }
   ]);
   
-  const [weeklySchedules, setWeeklySchedules] = useState<WeeklySchedule[]>([]);
   const [annualPlannings, setAnnualPlannings] = useState<AnnualPlanning[]>([]);
   const [realRecommendations, setRealRecommendations] = useState<RealRecommendation[]>([]);
 
@@ -203,15 +228,19 @@ const HousekeepingModule: React.FC = () => {
   useEffect(() => {
     generateWeeklySchedules();
     generateAnnualPlannings();
-    generateRealRecommendations();
   }, [employees, breakDuration]);
 
-  // Initialiser le planning personnalisé
+  // Initialiser le planning actif avec le planning proposé
   useEffect(() => {
-    if (isCustomPlanningMode && customSchedules.length === 0) {
-      setCustomSchedules([...weeklySchedules]);
+    if (activePlanning.length === 0 && originalPlanning.length > 0) {
+      setActivePlanning([...originalPlanning]);
     }
-  }, [isCustomPlanningMode, weeklySchedules, customSchedules.length]);
+  }, [originalPlanning]);
+
+  // Recalculer les recommandations quand le planning actif change
+  useEffect(() => {
+    generateRealRecommendations();
+  }, [activePlanning, employees, breakDuration]);
 
   const calculateStaff = () => {
     const totalCleaningTime = config.roomTypes.reduce((total, room) => {
@@ -550,7 +579,10 @@ const HousekeepingModule: React.FC = () => {
       return schedule;
     });
 
-    setWeeklySchedules(schedules);
+    setOriginalPlanning(schedules);
+    if (activePlanning.length === 0) {
+      setActivePlanning([...schedules]);
+    }
   };
 
   // Générer le planning annuel avec gestion des congés
@@ -591,13 +623,13 @@ const HousekeepingModule: React.FC = () => {
     setAnnualPlannings(plannings);
   };
 
-  // Générer des recommandations réalistes basées sur les vraies données
+  // Générer des recommandations réalistes basées sur le planning actif
   const generateRealRecommendations = () => {
     const recommendations: RealRecommendation[] = [];
     
     // Vérifier la couverture des chambres
     const totalCleaningHours = calculation.dailyCleaningHours * 365;
-    const totalStaffHours = employees.reduce((total, emp) => total + (emp.weeklyHours * 52), 0);
+    const totalStaffHours = activePlanning.reduce((total, schedule) => total + (schedule.totalWeeklyHours * 52), 0);
     
     if (totalStaffHours < totalCleaningHours) {
       const deficit = totalCleaningHours - totalStaffHours;
@@ -695,15 +727,133 @@ const HousekeepingModule: React.FC = () => {
     }));
   };
 
-  const resetToProposedPlanning = () => {
-    setCustomSchedules([...weeklySchedules]);
-    setIsCustomPlanningMode(false);
+
+  // Actions du planning unifié
+  const startEditing = () => {
+    setPlanningStatus('editing');
   };
 
-  const saveCustomPlanning = () => {
-    // Ici, on sauvegarderait le planning personnalisé
-    alert('Planning personnalisé sauvegardé !');
-    setIsCustomPlanningMode(false);
+  const resetToOriginal = () => {
+    setActivePlanning([...originalPlanning]);
+    setPlanningStatus('readonly');
+  };
+
+  const applyToAnnualPlanning = () => {
+    // Mettre à jour le planning annuel avec le planning actif
+    const updatedAnnualPlannings = annualPlannings.map(annual => {
+      const activeSchedule = activePlanning.find(s => s.employeeId === annual.employeeId);
+      if (activeSchedule) {
+        return {
+          ...annual,
+          totalAnnualHours: activeSchedule.totalWeeklyHours * 52
+        };
+      }
+      return annual;
+    });
+    setAnnualPlannings(updatedAnnualPlannings);
+    setPlanningStatus('applied');
+    alert('Planning appliqué au planning annuel avec succès !');
+  };
+
+  // Mettre à jour le planning actif
+  const handlePlanningChange = (employeeId: number, day: string, field: 'start' | 'end' | 'working', value: string | boolean) => {
+    setActivePlanning(prev => prev.map(schedule => {
+      if (schedule.employeeId === employeeId) {
+        const updatedSchedule = { ...schedule };
+        (updatedSchedule[day as keyof WeeklySchedule] as any)[field] = value;
+        
+        // Recalculer le total hebdomadaire
+        const workingDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        let totalHours = 0;
+        
+        workingDays.forEach(dayName => {
+          const daySchedule = updatedSchedule[dayName as keyof WeeklySchedule] as { start: string; end: string; working: boolean };
+          if (daySchedule.working && daySchedule.start && daySchedule.end) {
+            const startTime = new Date(`2000-01-01T${daySchedule.start}:00`);
+            const endTime = new Date(`2000-01-01T${daySchedule.end}:00`);
+            const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+            const workingHours = hours - (breakDuration / 60);
+            totalHours += Math.max(0, workingHours);
+          }
+        });
+        
+        updatedSchedule.totalWeeklyHours = Math.round(totalHours);
+        return updatedSchedule;
+      }
+      return schedule;
+    }));
+  };
+
+  // Sauvegarder un scénario
+  const saveScenario = () => {
+    if (!newScenarioName.trim()) {
+      alert('Veuillez entrer un nom pour le scénario');
+      return;
+    }
+
+    // Calculer les totaux
+    const byEmployee: Record<string, number> = {};
+    let weekTotal = 0;
+    
+    activePlanning.forEach(schedule => {
+      byEmployee[schedule.employeeName] = schedule.totalWeeklyHours;
+      weekTotal += schedule.totalWeeklyHours;
+    });
+
+    // Calculer le delta vs original
+    const originalTotal = originalPlanning.reduce((sum, s) => sum + s.totalWeeklyHours, 0);
+    const deltaVsOriginal = weekTotal - originalTotal;
+
+    const newScenario: PlanningScenario = {
+      id: `scenario-${Date.now()}`,
+      name: newScenarioName,
+      description: newScenarioDescription,
+      createdAt: new Date().toISOString(),
+      weekRef: `2025-W${Math.ceil(new Date().getDate() / 7)}`,
+      type: planningStatus === 'readonly' ? 'propose' : 'propose_modifie',
+      payload: JSON.parse(JSON.stringify(activePlanning)), // deep copy
+      breakDuration,
+      totals: {
+        byEmployee,
+        weekTotal,
+        deltaVsOriginal
+      }
+    };
+
+    setScenarios([newScenario, ...scenarios]);
+    setShowSaveScenarioModal(false);
+    setNewScenarioName('');
+    setNewScenarioDescription('');
+    alert(`Scénario "${newScenarioName}" sauvegardé avec succès !`);
+  };
+
+  // Restaurer un scénario
+  const restoreScenario = (scenario: PlanningScenario) => {
+    setActivePlanning(JSON.parse(JSON.stringify(scenario.payload)));
+    setBreakDuration(scenario.breakDuration);
+    setPlanningStatus(scenario.type === 'propose' ? 'readonly' : 'editing');
+    setShowScenarioHistoryModal(false);
+    alert(`Scénario "${scenario.name}" restauré !`);
+  };
+
+  // Supprimer un scénario
+  const deleteScenario = (scenarioId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce scénario ?')) {
+      setScenarios(scenarios.filter(s => s.id !== scenarioId));
+    }
+  };
+
+  // Dupliquer un scénario
+  const duplicateScenario = (scenario: PlanningScenario) => {
+    const duplicated: PlanningScenario = {
+      ...scenario,
+      id: `scenario-${Date.now()}`,
+      name: `${scenario.name} (copie)`,
+      createdAt: new Date().toISOString(),
+      payload: JSON.parse(JSON.stringify(scenario.payload))
+    };
+    setScenarios([duplicated, ...scenarios]);
+    alert(`Scénario dupliqué : "${duplicated.name}"`);
   };
 
   const tabs = [
@@ -713,6 +863,11 @@ const HousekeepingModule: React.FC = () => {
     { id: 'planning', name: 'Planning', icon: ClockIcon },
     { id: 'annual', name: 'Planning annuel', icon: ChartBarIcon },
     { id: 'settings', name: 'Paramètres', icon: CogIcon }
+  ];
+
+  const planningTabs = [
+    { id: 'proposed', name: 'Planning proposé' },
+    { id: 'recommendations', name: 'Recommandations' }
   ];
 
   return (
@@ -1097,27 +1252,37 @@ const HousekeepingModule: React.FC = () => {
         <div className="space-y-6">
           {/* Sous-navigation Planning */}
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActivePlanningTab('proposed')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activePlanningTab === 'proposed'
-                    ? 'border-hotaly-primary text-hotaly-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Planning proposé
-              </button>
-              <button
-                onClick={() => setActivePlanningTab('recommendations')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activePlanningTab === 'recommendations'
-                    ? 'border-hotaly-primary text-hotaly-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Recommandations
-              </button>
+            <nav className="-mb-px flex justify-between">
+              <div className="flex space-x-8">
+                {planningTabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActivePlanningTab(tab.id)}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activePlanningTab === tab.id
+                        ? 'border-hotaly-primary text-hotaly-primary'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    {tab.name}
+                  </button>
+                ))}
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowSaveScenarioModal(true)}
+                  className="px-3 py-1.5 text-sm font-medium text-white bg-hotaly-primary rounded-lg hover:bg-hotaly-primary-dark flex items-center space-x-1"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  <span>Sauvegarder scénario</span>
+                </button>
+                <button
+                  onClick={() => setShowScenarioHistoryModal(true)}
+                  className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Historique ({scenarios.length})
+                </button>
+              </div>
             </nav>
           </div>
 
@@ -1125,10 +1290,39 @@ const HousekeepingModule: React.FC = () => {
           {activePlanningTab === 'proposed' && (
             <Card variant="elevated">
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center space-x-2">
-                  <ClockIcon className="h-5 w-5" />
-                  <span>Planning proposé - À valider</span>
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                    <ClockIcon className="h-5 w-5" />
+                    <span>Planning proposé</span>
+                    {planningStatus === 'editing' && (
+                      <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                        Mode édition
+                      </span>
+                    )}
+                    {planningStatus === 'applied' && (
+                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                        Appliqué
+                      </span>
+                    )}
+                  </h3>
+                  <div className="flex space-x-2">
+                    {planningStatus === 'readonly' && (
+                      <Button variant="primary" onClick={startEditing}>
+                        Modifier
+                      </Button>
+                    )}
+                    {planningStatus === 'editing' && (
+                      <>
+                        <Button variant="secondary" onClick={resetToOriginal}>
+                          Réinitialiser
+                        </Button>
+                        <Button variant="primary" onClick={applyToAnnualPlanning}>
+                          Appliquer au planning annuel
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
                 
                 <div className="space-y-6">
                   {/* Résumé du planning */}
@@ -1146,7 +1340,7 @@ const HousekeepingModule: React.FC = () => {
 
                   {/* Tableau du planning simplifié */}
                   <div className="space-y-4">
-                    {(isCustomPlanningMode ? customSchedules : weeklySchedules).map((schedule) => (
+                    {activePlanning.map((schedule) => (
                       <div key={schedule.employeeId} className="bg-white border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-lg font-semibold text-gray-900">{schedule.employeeName}</h3>
@@ -1201,13 +1395,13 @@ const HousekeepingModule: React.FC = () => {
                                     <div className="text-xs text-gray-500">
                                       Pause: {breakDuration}min
                                     </div>
-                                    {isCustomPlanningMode && (
+                                    {planningStatus === 'editing' && (
                                       <div className="mt-2 space-y-1">
                                         <div className="flex items-center space-x-2">
                                           <input
                                             type="checkbox"
                                             checked={daySchedule.working}
-                                            onChange={(e) => handleCustomScheduleChange(schedule.employeeId, day, 'working', e.target.checked)}
+                                            onChange={(e) => handlePlanningChange(schedule.employeeId, day, 'working', e.target.checked)}
                                             className="w-3 h-3 text-hotaly-primary border-gray-300 rounded"
                                           />
                                           <span className="text-xs text-gray-600">Travail</span>
@@ -1217,13 +1411,13 @@ const HousekeepingModule: React.FC = () => {
                                             <input
                                               type="time"
                                               value={daySchedule.start}
-                                              onChange={(e) => handleCustomScheduleChange(schedule.employeeId, day, 'start', e.target.value)}
+                                              onChange={(e) => handlePlanningChange(schedule.employeeId, day, 'start', e.target.value)}
                                               className="w-16 px-1 py-1 text-xs border border-gray-300 rounded"
                                             />
                                             <input
                                               type="time"
                                               value={daySchedule.end}
-                                              onChange={(e) => handleCustomScheduleChange(schedule.employeeId, day, 'end', e.target.value)}
+                                              onChange={(e) => handlePlanningChange(schedule.employeeId, day, 'end', e.target.value)}
                                               className="w-16 px-1 py-1 text-xs border border-gray-300 rounded"
                                             />
                                           </div>
@@ -1234,12 +1428,12 @@ const HousekeepingModule: React.FC = () => {
                                 ) : (
                                   <div className="space-y-1">
                                     <div className="text-sm text-gray-500">Repos</div>
-                                    {isCustomPlanningMode && (
+                                    {planningStatus === 'editing' && (
                                       <div className="flex items-center space-x-2">
                                         <input
                                           type="checkbox"
                                           checked={daySchedule.working}
-                                          onChange={(e) => handleCustomScheduleChange(schedule.employeeId, day, 'working', e.target.checked)}
+                                          onChange={(e) => handlePlanningChange(schedule.employeeId, day, 'working', e.target.checked)}
                                           className="w-3 h-3 text-hotaly-primary border-gray-300 rounded"
                                         />
                                         <span className="text-xs text-gray-600">Travail</span>
@@ -1281,37 +1475,30 @@ const HousekeepingModule: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Statut :</span> {isCustomPlanningMode ? 'Planning personnalisé' : 'À valider'}
+                  {/* Configuration durée de pause */}
+                  {planningStatus === 'editing' && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Durée de la pause
+                      </label>
+                      <select
+                        value={breakDuration}
+                        onChange={(e) => setBreakDuration(Number(e.target.value))}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      >
+                        <option value={15}>15 minutes</option>
+                        <option value={30}>30 minutes</option>
+                        <option value={45}>45 minutes</option>
+                        <option value={60}>1 heure</option>
+                        <option value={90}>1h30</option>
+                      </select>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      {!isCustomPlanningMode ? (
-                        <>
-                          <Button variant="secondary" onClick={() => setIsCustomPlanningMode(true)}>
-                            Modifier
-                          </Button>
-                          <Button variant="primary" onClick={handleValidatePlanning}>
-                            Valider le planning
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button variant="secondary" onClick={resetToProposedPlanning}>
-                            Annuler
-                          </Button>
-                          <Button variant="primary" onClick={saveCustomPlanning}>
-                            Sauvegarder
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </Card>
           )}
+
 
           {/* Contenu Recommandations */}
           {activePlanningTab === 'recommendations' && (
@@ -1848,6 +2035,163 @@ const HousekeepingModule: React.FC = () => {
             actualWorkingHoursPerYear: calculation.actualWorkingHoursPerYear
           }}
         />
+      )}
+
+      {/* Modal de sauvegarde de scénario */}
+      {showSaveScenarioModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Sauvegarder le scénario actuel
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nom du scénario *
+                </label>
+                <input
+                  type="text"
+                  value={newScenarioName}
+                  onChange={(e) => setNewScenarioName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                  placeholder="Ex: Planning été 2025"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (optionnelle)
+                </label>
+                <textarea
+                  value={newScenarioDescription}
+                  onChange={(e) => setNewScenarioDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                  placeholder="Ex: Planning optimisé pour la période de haute saison"
+                />
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Type :</strong> {planningStatus === 'readonly' ? 'Planning proposé' : 'Planning modifié'}
+                  <br />
+                  <strong>Pause :</strong> {breakDuration} min
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowSaveScenarioModal(false);
+                  setNewScenarioName('');
+                  setNewScenarioDescription('');
+                }}
+              >
+                Annuler
+              </Button>
+              <Button variant="primary" onClick={saveScenario}>
+                Sauvegarder
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'historique des scénarios */}
+      {showScenarioHistoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Historique des scénarios ({scenarios.length})
+              </h3>
+              <Button
+                variant="secondary"
+                onClick={() => setShowScenarioHistoryModal(false)}
+              >
+                Fermer
+              </Button>
+            </div>
+
+            {scenarios.length === 0 ? (
+              <div className="text-center py-12">
+                <InformationCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Aucun scénario sauvegardé</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Créez un planning et cliquez sur "Sauvegarder scénario" pour l'enregistrer
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {scenarios.map((scenario) => (
+                  <div key={scenario.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="font-semibold text-gray-900">{scenario.name}</h4>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            scenario.type === 'propose_modifie' 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {scenario.type === 'propose_modifie' ? 'Modifié' : 'Proposé'}
+                          </span>
+                        </div>
+                        {scenario.description && (
+                          <p className="text-sm text-gray-600 mb-2">{scenario.description}</p>
+                        )}
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>
+                            Créé le {new Date(scenario.createdAt).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                          <span>•</span>
+                          <span>Pause: {scenario.breakDuration} min</span>
+                          <span>•</span>
+                          <span>
+                            {scenario.totals.weekTotal}h totales/semaine
+                            {scenario.totals.deltaVsOriginal && scenario.totals.deltaVsOriginal !== 0 && (
+                              <span className={`ml-1 ${scenario.totals.deltaVsOriginal > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ({scenario.totals.deltaVsOriginal > 0 ? '+' : ''}{scenario.totals.deltaVsOriginal}h)
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 ml-4">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => restoreScenario(scenario)}
+                        >
+                          Restaurer
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => duplicateScenario(scenario)}
+                        >
+                          Dupliquer
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => deleteScenario(scenario.id)}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
