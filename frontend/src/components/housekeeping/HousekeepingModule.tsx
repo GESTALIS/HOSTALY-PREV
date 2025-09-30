@@ -11,11 +11,13 @@ import {
   ExclamationTriangleIcon,
   PlusIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import PlanningValidationModal from './PlanningValidationModal';
+import HousekeepingExplanationModal from './HousekeepingExplanationModal';
 import api from '../../lib/api';
 
 interface RoomType {
@@ -49,6 +51,62 @@ interface StaffCalculation {
   actualWorkingHoursPerYear: number;
   dailyCleaningHours: number;
   realCapacityPerStaff: number;
+}
+
+interface EmployeeSchedule {
+  id: number;
+  name: string;
+  weeklyHours: number;
+  workingDays: number[]; // [1,2,3,4,5] pour lundi-vendredi
+  startTime: string; // "10:00"
+  endTime: string; // "17:00"
+  breakDuration: number; // 60 minutes
+  isActive: boolean;
+}
+
+interface WeeklySchedule {
+  employeeId: number;
+  employeeName: string;
+  monday: { start: string; end: string; working: boolean };
+  tuesday: { start: string; end: string; working: boolean };
+  wednesday: { start: string; end: string; working: boolean };
+  thursday: { start: string; end: string; working: boolean };
+  friday: { start: string; end: string; working: boolean };
+  saturday: { start: string; end: string; working: boolean };
+  sunday: { start: string; end: string; working: boolean };
+  totalWeeklyHours: number;
+}
+
+interface AnnualPlanning {
+  employeeId: number;
+  employeeName: string;
+  totalAnnualHours: number;
+  targetAnnualHours: number;
+  deficitOrSurplus: number;
+  workingDaysPerYear: number;
+  leaveDaysUsed: number;
+  leaveDaysRemaining: number;
+  monthlyBreakdown: {
+    month: string;
+    hours: number;
+    workingDays: number;
+    leaveDays: number;
+  }[];
+}
+
+interface RealRecommendation {
+  type: 'deficit' | 'surplus' | 'leave_balance' | 'coverage_gap';
+  employeeId: number;
+  employeeName: string;
+  currentHours: number;
+  targetHours: number;
+  deficit: number;
+  recommendation: string;
+  impact: {
+    financial: number;
+    coverage: number;
+    compliance: boolean;
+  };
 }
 
 const HousekeepingModule: React.FC = () => {
@@ -89,6 +147,48 @@ const HousekeepingModule: React.FC = () => {
   const [newRoomType, setNewRoomType] = useState({ type: '', count: 0, cleaningTime: 30 });
   const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
   const [validationData, setValidationData] = useState<any>(null);
+  const [isExplanationModalOpen, setIsExplanationModalOpen] = useState(false);
+  const [isCustomPlanningMode, setIsCustomPlanningMode] = useState(false);
+  const [customSchedules, setCustomSchedules] = useState<WeeklySchedule[]>([]);
+  const [breakDuration, setBreakDuration] = useState(30); // en minutes
+  
+  // Données des employés Housekeeping avec jours de repos décalés
+  const [employees, setEmployees] = useState<EmployeeSchedule[]>([
+    {
+      id: 1,
+      name: 'Marie Dubois',
+      weeklyHours: 35,
+      workingDays: [1, 2, 3, 4, 5], // Lundi à Vendredi
+      startTime: '10:00',
+      endTime: '17:00',
+      breakDuration: 60,
+      isActive: true
+    },
+    {
+      id: 2,
+      name: 'Sophie Martin',
+      weeklyHours: 35,
+      workingDays: [1, 2, 3, 4, 6], // Lundi à Jeudi + Samedi
+      startTime: '10:30',
+      endTime: '17:30',
+      breakDuration: 60,
+      isActive: true
+    },
+    {
+      id: 3,
+      name: 'Claire Bernard',
+      weeklyHours: 35,
+      workingDays: [2, 3, 4, 5, 7], // Mardi à Vendredi + Dimanche
+      startTime: '11:00',
+      endTime: '18:00',
+      breakDuration: 60,
+      isActive: true
+    }
+  ]);
+  
+  const [weeklySchedules, setWeeklySchedules] = useState<WeeklySchedule[]>([]);
+  const [annualPlannings, setAnnualPlannings] = useState<AnnualPlanning[]>([]);
+  const [realRecommendations, setRealRecommendations] = useState<RealRecommendation[]>([]);
 
   useEffect(() => {
     calculateStaff();
@@ -98,6 +198,20 @@ const HousekeepingModule: React.FC = () => {
   useEffect(() => {
     calculateStaff();
   }, [config.roomTypes]);
+
+  // Générer les plannings hebdomadaires et annuels
+  useEffect(() => {
+    generateWeeklySchedules();
+    generateAnnualPlannings();
+    generateRealRecommendations();
+  }, [employees, breakDuration]);
+
+  // Initialiser le planning personnalisé
+  useEffect(() => {
+    if (isCustomPlanningMode && customSchedules.length === 0) {
+      setCustomSchedules([...weeklySchedules]);
+    }
+  }, [isCustomPlanningMode, weeklySchedules, customSchedules.length]);
 
   const calculateStaff = () => {
     const totalCleaningTime = config.roomTypes.reduce((total, room) => {
@@ -163,11 +277,17 @@ const HousekeepingModule: React.FC = () => {
         return total + room.count;
       }, 0);
 
-      const workingHoursPerStaff = newConfig.workingHoursPerStaff;
-      const minimumStaff = Math.ceil(totalCleaningTime / workingHoursPerStaff);
+      // Calculer les paramètres RH
+      const actualWorkingDaysPerYear = 365 - (newConfig.restDaysPerWeek * 52) - newConfig.annualLeaveDays;
+      const actualWorkingHoursPerYear = actualWorkingDaysPerYear * (newConfig.weeklyHours / 5);
+      const dailyCleaningHours = totalCleaningTime / 60;
+      const realCapacityPerStaff = actualWorkingHoursPerYear;
+
+      const workingHoursPerStaff = newConfig.workingHoursPerStaff / 60; // conversion en heures
+      const minimumStaff = Math.ceil(dailyCleaningHours / (realCapacityPerStaff / 365)); // heures par jour / capacité par jour
       const safetyMargin = Math.ceil(minimumStaff * (newConfig.safetyMargin / 100));
       const recommendedStaff = minimumStaff + safetyMargin;
-      const efficiency = Math.round((totalCleaningTime / (recommendedStaff * workingHoursPerStaff)) * 100);
+      const efficiency = Math.round((dailyCleaningHours / (recommendedStaff * (realCapacityPerStaff / 365))) * 100);
 
       setCalculation({
         totalCleaningTime,
@@ -175,7 +295,11 @@ const HousekeepingModule: React.FC = () => {
         minimumStaff,
         recommendedStaff,
         withSafetyMargin: recommendedStaff,
-        efficiency
+        efficiency,
+        actualWorkingDaysPerYear,
+        actualWorkingHoursPerYear,
+        dailyCleaningHours,
+        realCapacityPerStaff
       });
 
       return {
@@ -204,11 +328,17 @@ const HousekeepingModule: React.FC = () => {
           return total + room.count;
         }, 0);
 
-        const workingHoursPerStaff = newConfig.workingHoursPerStaff;
-        const minimumStaff = Math.ceil(totalCleaningTime / workingHoursPerStaff);
+        // Calculer les paramètres RH
+        const actualWorkingDaysPerYear = 365 - (newConfig.restDaysPerWeek * 52) - newConfig.annualLeaveDays;
+        const actualWorkingHoursPerYear = actualWorkingDaysPerYear * (newConfig.weeklyHours / 5);
+        const dailyCleaningHours = totalCleaningTime / 60;
+        const realCapacityPerStaff = actualWorkingHoursPerYear;
+
+        const workingHoursPerStaff = newConfig.workingHoursPerStaff / 60; // conversion en heures
+        const minimumStaff = Math.ceil(dailyCleaningHours / (realCapacityPerStaff / 365)); // heures par jour / capacité par jour
         const safetyMargin = Math.ceil(minimumStaff * (newConfig.safetyMargin / 100));
         const recommendedStaff = minimumStaff + safetyMargin;
-        const efficiency = Math.round((totalCleaningTime / (recommendedStaff * workingHoursPerStaff)) * 100);
+        const efficiency = Math.round((dailyCleaningHours / (recommendedStaff * (realCapacityPerStaff / 365))) * 100);
 
         setCalculation({
           totalCleaningTime,
@@ -216,7 +346,11 @@ const HousekeepingModule: React.FC = () => {
           minimumStaff,
           recommendedStaff,
           withSafetyMargin: recommendedStaff,
-          efficiency
+          efficiency,
+          actualWorkingDaysPerYear,
+          actualWorkingHoursPerYear,
+          dailyCleaningHours,
+          realCapacityPerStaff
         });
 
         return {
@@ -246,11 +380,17 @@ const HousekeepingModule: React.FC = () => {
         return total + room.count;
       }, 0);
 
-      const workingHoursPerStaff = newConfig.workingHoursPerStaff;
-      const minimumStaff = Math.ceil(totalCleaningTime / workingHoursPerStaff);
+      // Calculer les paramètres RH
+      const actualWorkingDaysPerYear = 365 - (newConfig.restDaysPerWeek * 52) - newConfig.annualLeaveDays;
+      const actualWorkingHoursPerYear = actualWorkingDaysPerYear * (newConfig.weeklyHours / 5);
+      const dailyCleaningHours = totalCleaningTime / 60;
+      const realCapacityPerStaff = actualWorkingHoursPerYear;
+
+      const workingHoursPerStaff = newConfig.workingHoursPerStaff / 60; // conversion en heures
+      const minimumStaff = Math.ceil(dailyCleaningHours / (realCapacityPerStaff / 365)); // heures par jour / capacité par jour
       const safetyMargin = Math.ceil(minimumStaff * (newConfig.safetyMargin / 100));
       const recommendedStaff = minimumStaff + safetyMargin;
-      const efficiency = Math.round((totalCleaningTime / (recommendedStaff * workingHoursPerStaff)) * 100);
+      const efficiency = Math.round((dailyCleaningHours / (recommendedStaff * (realCapacityPerStaff / 365))) * 100);
 
       setCalculation({
         totalCleaningTime,
@@ -258,7 +398,11 @@ const HousekeepingModule: React.FC = () => {
         minimumStaff,
         recommendedStaff,
         withSafetyMargin: recommendedStaff,
-        efficiency
+        efficiency,
+        actualWorkingDaysPerYear,
+        actualWorkingHoursPerYear,
+        dailyCleaningHours,
+        realCapacityPerStaff
       });
 
       return {
@@ -359,11 +503,215 @@ const HousekeepingModule: React.FC = () => {
     alert(decision === 'accept' ? 'Recommandation validée' : 'Recommandation refusée');
   };
 
+  // Générer les plannings hebdomadaires en respectant les jours de repos
+  const generateWeeklySchedules = () => {
+    const schedules: WeeklySchedule[] = employees.map(employee => {
+      const schedule: WeeklySchedule = {
+        employeeId: employee.id,
+        employeeName: employee.name,
+        monday: { start: '', end: '', working: false },
+        tuesday: { start: '', end: '', working: false },
+        wednesday: { start: '', end: '', working: false },
+        thursday: { start: '', end: '', working: false },
+        friday: { start: '', end: '', working: false },
+        saturday: { start: '', end: '', working: false },
+        sunday: { start: '', end: '', working: false },
+        totalWeeklyHours: 0
+      };
+
+      // Calculer les heures par jour de travail (en excluant la pause)
+      const workingDaysCount = employee.workingDays.length;
+      const dailyWorkingHours = (employee.weeklyHours * 60 - (breakDuration * workingDaysCount)) / (workingDaysCount * 60);
+      
+      // Convertir en heures et minutes
+      const hours = Math.floor(dailyWorkingHours);
+      const minutes = Math.round((dailyWorkingHours - hours) * 60);
+      
+      // Calculer l'heure de fin (temps de travail + pause)
+      const startTime = new Date(`2000-01-01T${employee.startTime}:00`);
+      const endTime = new Date(startTime.getTime() + (hours * 60 + minutes + breakDuration) * 60000);
+      const endTimeString = endTime.toTimeString().slice(0, 5);
+
+      // Remplir les jours de travail
+      employee.workingDays.forEach(day => {
+        const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        const dayName = dayNames[day - 1] as keyof WeeklySchedule;
+        
+        if (dayName && typeof schedule[dayName] === 'object') {
+          (schedule[dayName] as any).start = employee.startTime;
+          (schedule[dayName] as any).end = endTimeString;
+          (schedule[dayName] as any).working = true;
+        }
+      });
+
+      // Calculer le total réel (heures travaillées - pauses)
+      const realTotalHours = workingDaysCount * dailyWorkingHours;
+      schedule.totalWeeklyHours = Math.round(realTotalHours);
+      return schedule;
+    });
+
+    setWeeklySchedules(schedules);
+  };
+
+  // Générer le planning annuel avec gestion des congés
+  const generateAnnualPlannings = () => {
+    const plannings: AnnualPlanning[] = employees.map(employee => {
+      const workingDaysPerYear = 365 - (config.restDaysPerWeek * 52) - config.annualLeaveDays;
+      const targetAnnualHours = workingDaysPerYear * (employee.weeklyHours / 5);
+      const totalAnnualHours = workingDaysPerYear * (employee.weeklyHours / 5);
+      
+      // Simulation de congés pris (exemple)
+      const leaveDaysUsed = Math.floor(config.annualLeaveDays * 0.7); // 70% des congés pris
+      const leaveDaysRemaining = config.annualLeaveDays - leaveDaysUsed;
+      
+      // Répartition mensuelle
+      const monthlyBreakdown = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      ].map(month => ({
+        month,
+        hours: Math.round(totalAnnualHours / 12),
+        workingDays: Math.round(workingDaysPerYear / 12),
+        leaveDays: Math.round(leaveDaysUsed / 12)
+      }));
+
+      return {
+        employeeId: employee.id,
+        employeeName: employee.name,
+        totalAnnualHours,
+        targetAnnualHours,
+        deficitOrSurplus: 0, // Pas de déficit avec le planning actuel
+        workingDaysPerYear,
+        leaveDaysUsed,
+        leaveDaysRemaining,
+        monthlyBreakdown
+      };
+    });
+
+    setAnnualPlannings(plannings);
+  };
+
+  // Générer des recommandations réalistes basées sur les vraies données
+  const generateRealRecommendations = () => {
+    const recommendations: RealRecommendation[] = [];
+    
+    // Vérifier la couverture des chambres
+    const totalCleaningHours = calculation.dailyCleaningHours * 365;
+    const totalStaffHours = employees.reduce((total, emp) => total + (emp.weeklyHours * 52), 0);
+    
+    if (totalStaffHours < totalCleaningHours) {
+      const deficit = totalCleaningHours - totalStaffHours;
+      recommendations.push({
+        type: 'coverage_gap',
+        employeeId: 0,
+        employeeName: 'Équipe Housekeeping',
+        currentHours: totalStaffHours,
+        targetHours: totalCleaningHours,
+        deficit: deficit,
+        recommendation: `Déficit de ${Math.round(deficit)}h/an. Recruter ${Math.ceil(deficit / (35 * 52))} employé(s) supplémentaire(s).`,
+        impact: {
+          financial: Math.ceil(deficit / (35 * 52)) * 2000 * 12, // Estimation
+          coverage: Math.round((totalStaffHours / totalCleaningHours) * 100),
+          compliance: false
+        }
+      });
+    }
+
+    // Vérifier l'équilibre des jours de repos
+    const weekendWorkers = employees.filter(emp => emp.workingDays.includes(6) || emp.workingDays.includes(7));
+    if (weekendWorkers.length === 0) {
+      recommendations.push({
+        type: 'coverage_gap',
+        employeeId: 0,
+        employeeName: 'Couverture week-end',
+        currentHours: 0,
+        targetHours: calculation.dailyCleaningHours * 2, // Samedi + Dimanche
+        deficit: calculation.dailyCleaningHours * 2,
+        recommendation: 'Aucune couverture le week-end. Réorganiser les plannings pour couvrir samedi et dimanche.',
+        impact: {
+          financial: 0,
+          coverage: 0,
+          compliance: false
+        }
+      });
+    }
+
+    setRealRecommendations(recommendations);
+  };
+
+  // Fonctions pour le planning personnalisé
+  const handleCustomScheduleChange = (employeeId: number, day: string, field: 'start' | 'end' | 'working', value: string | boolean) => {
+    setCustomSchedules(prev => prev.map(schedule => {
+      if (schedule.employeeId === employeeId) {
+        const updatedSchedule = { ...schedule };
+        (updatedSchedule[day as keyof WeeklySchedule] as any)[field] = value;
+        
+        // Si on coche "working" et qu'il n'y a pas d'heures, initialiser avec des heures par défaut
+        if (field === 'working' && value === true) {
+          const daySchedule = updatedSchedule[day as keyof WeeklySchedule] as { start: string; end: string; working: boolean };
+          if (!daySchedule.start || !daySchedule.end) {
+            // Trouver l'employé pour récupérer ses heures par défaut
+            const employee = employees.find(emp => emp.id === employeeId);
+            if (employee) {
+              // Calculer les heures par jour de travail (en excluant la pause)
+              const workingDaysCount = employee.workingDays.length;
+              const dailyWorkingHours = (employee.weeklyHours * 60 - (breakDuration * workingDaysCount)) / (workingDaysCount * 60);
+              
+              // Convertir en heures et minutes
+              const hours = Math.floor(dailyWorkingHours);
+              const minutes = Math.round((dailyWorkingHours - hours) * 60);
+              
+              // Calculer l'heure de fin (temps de travail + pause)
+              const startTime = new Date(`2000-01-01T${employee.startTime}:00`);
+              const endTime = new Date(startTime.getTime() + (hours * 60 + minutes + breakDuration) * 60000);
+              const endTimeString = endTime.toTimeString().slice(0, 5);
+              
+              (updatedSchedule[day as keyof WeeklySchedule] as any).start = employee.startTime;
+              (updatedSchedule[day as keyof WeeklySchedule] as any).end = endTimeString;
+            }
+          }
+        }
+        
+        // Recalculer le total hebdomadaire
+        const workingDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        let totalHours = 0;
+        
+        workingDays.forEach(dayName => {
+          const daySchedule = updatedSchedule[dayName as keyof WeeklySchedule] as { start: string; end: string; working: boolean };
+          if (daySchedule.working && daySchedule.start && daySchedule.end) {
+            const startTime = new Date(`2000-01-01T${daySchedule.start}:00`);
+            const endTime = new Date(`2000-01-01T${daySchedule.end}:00`);
+            const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+            // Soustraire la pause
+            const workingHours = hours - (breakDuration / 60);
+            totalHours += Math.max(0, workingHours);
+          }
+        });
+        
+        updatedSchedule.totalWeeklyHours = Math.round(totalHours);
+        return updatedSchedule;
+      }
+      return schedule;
+    }));
+  };
+
+  const resetToProposedPlanning = () => {
+    setCustomSchedules([...weeklySchedules]);
+    setIsCustomPlanningMode(false);
+  };
+
+  const saveCustomPlanning = () => {
+    // Ici, on sauvegarderait le planning personnalisé
+    alert('Planning personnalisé sauvegardé !');
+    setIsCustomPlanningMode(false);
+  };
+
   const tabs = [
     { id: 'overview', name: 'Vue d\'ensemble', icon: ChartBarIcon },
     { id: 'rooms', name: 'Configuration chambres', icon: HomeIcon },
     { id: 'calculation', name: 'Calcul personnel', icon: CalculatorIcon },
     { id: 'planning', name: 'Planning', icon: ClockIcon },
+    { id: 'annual', name: 'Planning annuel', icon: ChartBarIcon },
     { id: 'settings', name: 'Paramètres', icon: CogIcon }
   ];
 
@@ -376,6 +724,14 @@ const HousekeepingModule: React.FC = () => {
           <p className="text-gray-600">Gestion intelligente du personnel de nettoyage</p>
         </div>
         <div className="flex items-center space-x-2">
+          <Button
+            variant="secondary"
+            onClick={() => setIsExplanationModalOpen(true)}
+            className="flex items-center space-x-2"
+          >
+            <InformationCircleIcon className="h-4 w-4" />
+            <span>? Explication du calcul</span>
+          </Button>
           <Button
             variant="secondary"
             onClick={() => window.print()}
@@ -783,80 +1139,173 @@ const HousekeepingModule: React.FC = () => {
                     </div>
                     <p className="text-blue-700 text-sm">
                       Basé sur {config.totalRooms} chambres nécessitant {calculation.dailyCleaningHours.toFixed(1)}h de nettoyage par jour.
-                      Personnel requis : {calculation.recommendedStaff} employés (7h/jour chacun).
+                      Personnel requis : {calculation.recommendedStaff} employés avec décalage des arrivées (10h, 10h30, 11h).
+                      Respect des 2 jours de repos par semaine et des 30 jours de congés annuels.
                     </p>
                   </div>
 
-                  {/* Tableau du planning */}
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Employé
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Lundi
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Mardi
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Mercredi
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Jeudi
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Vendredi
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Samedi
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Dimanche
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Total/sem
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {/* Exemple de données - à remplacer par les vraies données */}
-                        {Array.from({ length: calculation.recommendedStaff }, (_, index) => (
-                          <tr key={index}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              Employé {index + 1}
-                            </td>
-                            {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
-                              <td key={day} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                  <span>7h</span>
-                                </div>
-                              </td>
-                            ))}
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              35h
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  {/* Tableau du planning simplifié */}
+                  <div className="space-y-4">
+                    {(isCustomPlanningMode ? customSchedules : weeklySchedules).map((schedule) => (
+                      <div key={schedule.employeeId} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">{schedule.employeeName}</h3>
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-gray-900">
+                              {schedule.totalWeeklyHours}h travaillées
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              + {breakDuration * (
+                                (schedule.monday.working ? 1 : 0) + 
+                                (schedule.tuesday.working ? 1 : 0) + 
+                                (schedule.wednesday.working ? 1 : 0) + 
+                                (schedule.thursday.working ? 1 : 0) + 
+                                (schedule.friday.working ? 1 : 0) + 
+                                (schedule.saturday.working ? 1 : 0) + 
+                                (schedule.sunday.working ? 1 : 0)
+                              )}min de pauses
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-7 gap-2">
+                          {[
+                            { day: 'monday', label: 'Lundi' },
+                            { day: 'tuesday', label: 'Mardi' },
+                            { day: 'wednesday', label: 'Mercredi' },
+                            { day: 'thursday', label: 'Jeudi' },
+                            { day: 'friday', label: 'Vendredi' },
+                            { day: 'saturday', label: 'Samedi' },
+                            { day: 'sunday', label: 'Dimanche' }
+                          ].map(({ day, label }) => {
+                            const daySchedule = schedule[day as keyof WeeklySchedule] as { start: string; end: string; working: boolean };
+                            const totalMinutes = daySchedule.working ? 
+                              (new Date(`2000-01-01T${daySchedule.end}:00`).getTime() - new Date(`2000-01-01T${daySchedule.start}:00`).getTime()) / (1000 * 60) : 0;
+                            const workingMinutes = Math.max(0, totalMinutes - breakDuration);
+                            const workingHours = Math.floor(workingMinutes / 60);
+                            const workingMins = Math.round(workingMinutes % 60);
+                            
+                            return (
+                              <div key={day} className={`p-3 rounded-lg border-2 ${
+                                daySchedule.working ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'
+                              }`}>
+                                <div className="text-xs font-medium text-gray-600 mb-2">{label}</div>
+                                {daySchedule.working ? (
+                                  <div className="space-y-1">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {daySchedule.start} - {daySchedule.end}
+                                    </div>
+                                    <div className="text-xs text-green-600">
+                                      {workingHours}h{workingMins > 0 ? workingMins : ''} travaillées
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      Pause: {breakDuration}min
+                                    </div>
+                                    {isCustomPlanningMode && (
+                                      <div className="mt-2 space-y-1">
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="checkbox"
+                                            checked={daySchedule.working}
+                                            onChange={(e) => handleCustomScheduleChange(schedule.employeeId, day, 'working', e.target.checked)}
+                                            className="w-3 h-3 text-hotaly-primary border-gray-300 rounded"
+                                          />
+                                          <span className="text-xs text-gray-600">Travail</span>
+                                        </div>
+                                        {daySchedule.working && (
+                                          <div className="flex space-x-1">
+                                            <input
+                                              type="time"
+                                              value={daySchedule.start}
+                                              onChange={(e) => handleCustomScheduleChange(schedule.employeeId, day, 'start', e.target.value)}
+                                              className="w-16 px-1 py-1 text-xs border border-gray-300 rounded"
+                                            />
+                                            <input
+                                              type="time"
+                                              value={daySchedule.end}
+                                              onChange={(e) => handleCustomScheduleChange(schedule.employeeId, day, 'end', e.target.value)}
+                                              className="w-16 px-1 py-1 text-xs border border-gray-300 rounded"
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <div className="text-sm text-gray-500">Repos</div>
+                                    {isCustomPlanningMode && (
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          checked={daySchedule.working}
+                                          onChange={(e) => handleCustomScheduleChange(schedule.employeeId, day, 'working', e.target.checked)}
+                                          className="w-3 h-3 text-hotaly-primary border-gray-300 rounded"
+                                        />
+                                        <span className="text-xs text-gray-600">Travail</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Configuration des pauses */}
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <ClockIcon className="h-5 w-5 text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">Durée de pause par jour :</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <select
+                          value={breakDuration}
+                          onChange={(e) => setBreakDuration(Number(e.target.value))}
+                          className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-hotaly-primary focus:border-hotaly-primary"
+                        >
+                          <option value={15}>15 min</option>
+                          <option value={30}>30 min</option>
+                          <option value={45}>45 min</option>
+                          <option value={60}>1h</option>
+                          <option value={90}>1h30</option>
+                        </select>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      La pause est automatiquement déduite du temps de travail quotidien pour tous les employés.
+                    </p>
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center justify-between pt-4 border-t">
                     <div className="text-sm text-gray-600">
-                      <span className="font-medium">Statut :</span> À valider
+                      <span className="font-medium">Statut :</span> {isCustomPlanningMode ? 'Planning personnalisé' : 'À valider'}
                     </div>
                     <div className="flex items-center space-x-3">
-                      <Button variant="secondary">
-                        Modifier
-                      </Button>
-                      <Button variant="primary" onClick={handleValidatePlanning}>
-                        Valider le planning
-                      </Button>
+                      {!isCustomPlanningMode ? (
+                        <>
+                          <Button variant="secondary" onClick={() => setIsCustomPlanningMode(true)}>
+                            Modifier
+                          </Button>
+                          <Button variant="primary" onClick={handleValidatePlanning}>
+                            Valider le planning
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="secondary" onClick={resetToProposedPlanning}>
+                            Annuler
+                          </Button>
+                          <Button variant="primary" onClick={saveCustomPlanning}>
+                            Sauvegarder
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -874,85 +1323,188 @@ const HousekeepingModule: React.FC = () => {
                 </h3>
                 
                 <div className="space-y-6">
-                  {/* Exemple de recommandation pour démonstration */}
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <ExclamationTriangleIcon className="h-6 w-6 text-orange-600" />
+                  {/* Recommandations réalistes */}
+                  {realRecommendations.map((rec, index) => (
+                    <div key={index} className={`border rounded-lg p-4 ${
+                      rec.type === 'coverage_gap' ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <ExclamationTriangleIcon className={`h-6 w-6 ${
+                            rec.type === 'coverage_gap' ? 'text-red-600' : 'text-orange-600'
+                          }`} />
+                          <div>
+                            <h4 className={`font-medium ${
+                              rec.type === 'coverage_gap' ? 'text-red-900' : 'text-orange-900'
+                            }`}>
+                              {rec.type === 'coverage_gap' ? 'Déficit de couverture' : 'Écart détecté'}
+                            </h4>
+                            <p className={`text-sm ${
+                              rec.type === 'coverage_gap' ? 'text-red-700' : 'text-orange-700'
+                            }`}>
+                              {rec.employeeName}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          rec.type === 'coverage_gap' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          Critique
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
-                          <h4 className="font-medium text-orange-900">Sur-charge détectée</h4>
-                          <p className="text-sm text-orange-700">Marie Dubois - 39h/semaine projetées</p>
+                          <label className="block text-xs font-medium text-gray-600">Recommandation</label>
+                          <p className="text-sm text-gray-900">{rec.recommendation}</p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600">Impact financier</label>
+                          <p className="text-sm text-gray-900">
+                            {rec.impact.financial > 0 ? `+${rec.impact.financial}€/an` : 'Aucun coût supplémentaire'}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600">Couverture</label>
+                          <div className="flex items-center space-x-1">
+                            <span className={`text-sm font-medium ${
+                              rec.impact.coverage >= 90 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {rec.impact.coverage}%
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                        À valider
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600">Recommandation</label>
-                        <p className="text-sm text-gray-900">Changement de contrat (39h)</p>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Button 
+                          variant="primary" 
+                          size="sm"
+                          onClick={() => {
+                            const mockRecommendation = {
+                              type: rec.type === 'coverage_gap' ? 'sous-charge' : 'sur-charge',
+                              employee: {
+                                id: rec.employeeId,
+                                name: rec.employeeName,
+                                currentHours: rec.currentHours,
+                                projectedHours: rec.targetHours
+                              },
+                              recommendation: {
+                                type: rec.type === 'coverage_gap' ? 'recruitment' : 'contract_change',
+                                details: { targetHours: rec.targetHours }
+                              },
+                              impact: {
+                                coverage: rec.impact.coverage,
+                                salaryImpact: rec.impact.financial / 12,
+                                compliance: rec.impact.compliance
+                              }
+                            };
+                            setValidationData(mockRecommendation);
+                            setIsValidationModalOpen(true);
+                          }}
+                        >
+                          Examiner
+                        </Button>
+                        <Button variant="secondary" size="sm">
+                          Ignorer
+                        </Button>
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600">Impact salarial</label>
-                        <p className="text-sm text-gray-900">+320€/mois</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600">Conformité</label>
-                        <div className="flex items-center space-x-1">
-                          <CheckCircleIcon className="h-4 w-4 text-green-600" />
-                          <span className="text-sm text-green-600">Conforme</span>
-                        </div>
-                      </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <Button 
-                        variant="primary" 
-                        size="sm"
-                        onClick={() => {
-                          const mockRecommendation = {
-                            type: 'sur-charge' as const,
-                            employee: {
-                              id: 1,
-                              name: 'Marie Dubois',
-                              currentHours: 35,
-                              projectedHours: 39
-                            },
-                            recommendation: {
-                              type: 'contract_change' as const,
-                              details: { targetHours: 39 }
-                            },
-                            impact: {
-                              coverage: 95,
-                              salaryImpact: 320,
-                              compliance: true
-                            }
-                          };
-                          setValidationData(mockRecommendation);
-                          setIsValidationModalOpen(true);
-                        }}
-                      >
-                        Examiner
-                      </Button>
-                      <Button variant="secondary" size="sm">
-                        Ignorer
-                      </Button>
-                    </div>
-                  </div>
+                  ))}
 
-                  {/* Aucune autre recommandation */}
-                  <div className="text-center py-8">
-                    <CheckCircleIcon className="mx-auto h-8 w-8 text-green-400 mb-2" />
-                    <p className="text-sm text-gray-600">
-                      Aucune autre recommandation en attente
-                    </p>
-                  </div>
+                  {/* Aucune recommandation si tout va bien */}
+                  {realRecommendations.length === 0 && (
+                    <div className="text-center py-8">
+                      <CheckCircleIcon className="mx-auto h-8 w-8 text-green-400 mb-2" />
+                      <p className="text-sm text-gray-600">
+                        Aucune recommandation en attente - Planning optimal
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
           )}
+        </div>
+      )}
+
+      {activeTab === 'annual' && (
+        <div className="space-y-6">
+          <Card variant="elevated">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center space-x-2">
+                <ChartBarIcon className="h-5 w-5" />
+                <span>Planning annuel - Suivi des quotas</span>
+              </h3>
+              
+              <div className="space-y-6">
+                {annualPlannings.map((planning) => (
+                  <div key={planning.employeeId} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-900">{planning.employeeName}</h4>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600">{planning.totalAnnualHours}h</div>
+                          <div className="text-xs text-gray-600">Heures annuelles</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">{planning.workingDaysPerYear}</div>
+                          <div className="text-xs text-gray-600">Jours travaillés</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">{planning.leaveDaysRemaining}</div>
+                          <div className="text-xs text-gray-600">Congés restants</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Répartition mensuelle */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                      {planning.monthlyBreakdown.map((month, index) => (
+                        <div key={index} className="bg-gray-50 p-3 rounded-lg text-center">
+                          <div className="text-sm font-medium text-gray-900">{month.month}</div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            <div>{month.hours}h</div>
+                            <div>{month.workingDays}j travaillés</div>
+                            <div>{month.leaveDays}j congés</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Résumé global */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-3">Résumé de l'équipe</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Total heures équipe</label>
+                      <p className="text-lg font-bold text-blue-600">
+                        {annualPlannings.reduce((total, p) => total + p.totalAnnualHours, 0)}h/an
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Besoin total chambres</label>
+                      <p className="text-lg font-bold text-green-600">
+                        {Math.round(calculation.dailyCleaningHours * 365)}h/an
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Écart</label>
+                      <p className={`text-lg font-bold ${
+                        annualPlannings.reduce((total, p) => total + p.totalAnnualHours, 0) >= 
+                        Math.round(calculation.dailyCleaningHours * 365) ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {annualPlannings.reduce((total, p) => total + p.totalAnnualHours, 0) - 
+                         Math.round(calculation.dailyCleaningHours * 365)}h
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
       )}
 
@@ -1092,7 +1644,8 @@ const HousekeepingModule: React.FC = () => {
                         type="number"
                         min="1"
                         max="12"
-                        value={4}
+                        defaultValue={4}
+                        readOnly
                         className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
                       />
                       <span className="text-sm text-gray-600">semaines</span>
@@ -1111,7 +1664,8 @@ const HousekeepingModule: React.FC = () => {
                         type="number"
                         min="35"
                         max="45"
-                        value={37}
+                        defaultValue={37}
+                        readOnly
                         className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
                       />
                       <span className="text-sm text-gray-600">h/sem</span>
@@ -1130,7 +1684,8 @@ const HousekeepingModule: React.FC = () => {
                         type="number"
                         min="20"
                         max="35"
-                        value={33}
+                        defaultValue={33}
+                        readOnly
                         className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
                       />
                       <span className="text-sm text-gray-600">h/sem</span>
@@ -1147,7 +1702,7 @@ const HousekeepingModule: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        checked={true}
+                        defaultChecked={true}
                         readOnly
                         className="w-4 h-4 text-hotaly-primary border-gray-300 rounded focus:ring-hotaly-primary"
                       />
@@ -1203,7 +1758,8 @@ const HousekeepingModule: React.FC = () => {
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      checked={true}
+                      defaultChecked={true}
+                      readOnly
                       className="w-4 h-4 text-hotaly-primary border-gray-300 rounded focus:ring-hotaly-primary"
                     />
                     <span className="text-sm text-gray-700">Complément d'heures inter-services</span>
@@ -1266,6 +1822,31 @@ const HousekeepingModule: React.FC = () => {
           onClose={() => setIsValidationModalOpen(false)}
           onValidate={handleValidationDecision}
           planningData={validationData}
+        />
+      )}
+
+      {/* Modal d'explication */}
+      {isExplanationModalOpen && (
+        <HousekeepingExplanationModal
+          isOpen={isExplanationModalOpen}
+          onClose={() => setIsExplanationModalOpen(false)}
+          realData={{
+            totalRooms: config.totalRooms,
+            roomTypes: config.roomTypes,
+            totalCleaningTime: calculation.totalCleaningTime,
+            dailyCleaningHours: calculation.dailyCleaningHours,
+            employees: employees.map(emp => ({
+              name: emp.name,
+              weeklyHours: emp.weeklyHours,
+              workingDays: emp.workingDays,
+              startTime: emp.startTime,
+              endTime: emp.endTime
+            })),
+            annualLeaveDays: config.annualLeaveDays,
+            restDaysPerWeek: config.restDaysPerWeek,
+            actualWorkingDaysPerYear: calculation.actualWorkingDaysPerYear,
+            actualWorkingHoursPerYear: calculation.actualWorkingHoursPerYear
+          }}
         />
       )}
     </div>
