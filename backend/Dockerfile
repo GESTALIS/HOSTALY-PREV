@@ -8,11 +8,14 @@ COPY package*.json ./
 # Installer les dépendances (inclure dev pour build)
 RUN npm ci
 
-# Copier le code source
-COPY . .
+# Copier le schéma Prisma d'abord
+COPY prisma ./prisma
 
 # Générer Prisma client
 RUN npx prisma generate
+
+# Copier le reste du code source
+COPY . .
 
 # Build l'application
 RUN npm run build

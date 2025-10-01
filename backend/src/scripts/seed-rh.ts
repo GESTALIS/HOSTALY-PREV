@@ -1,4 +1,4 @@
-import { PrismaClient, Season, ServiceType, ContractType, WeeklyHours } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -31,12 +31,12 @@ async function seedRH() {
     prisma.service.create({
       data: {
         name: 'Réception',
-        type: ServiceType.AUTRE,
+        type: 'AUTRE',
         color: '#004b5d',
         schedules: {
           create: [
             // Haute saison - tous les jours
-            { season: Season.HAUTE, dayOfWeek: 0, openTime: '07:00', closeTime: '23:00' },
+            { season: 'HAUTE', dayOfWeek: 0, openTime: '07:00', closeTime: '23:00' },
             { season: Season.HAUTE, dayOfWeek: 1, openTime: '07:00', closeTime: '23:00' },
             { season: Season.HAUTE, dayOfWeek: 2, openTime: '07:00', closeTime: '23:00' },
             { season: Season.HAUTE, dayOfWeek: 3, openTime: '07:00', closeTime: '23:00' },
@@ -44,7 +44,7 @@ async function seedRH() {
             { season: Season.HAUTE, dayOfWeek: 5, openTime: '07:00', closeTime: '23:00' },
             { season: Season.HAUTE, dayOfWeek: 6, openTime: '07:00', closeTime: '23:00' },
             // Basse saison - tous les jours
-            { season: Season.BASSE, dayOfWeek: 0, openTime: '07:00', closeTime: '22:00' },
+            { season: 'BASSE', dayOfWeek: 0, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 1, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 2, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 3, openTime: '07:00', closeTime: '22:00' },
@@ -58,7 +58,7 @@ async function seedRH() {
     prisma.service.create({
       data: {
         name: 'Restaurant',
-        type: ServiceType.RESTAURATION,
+        type: 'RESTAURATION',
         color: '#eca08e',
         schedules: {
           create: [
@@ -71,7 +71,7 @@ async function seedRH() {
             { season: Season.HAUTE, dayOfWeek: 5, openTime: '07:00', closeTime: '22:30' },
             { season: Season.HAUTE, dayOfWeek: 6, openTime: '07:00', closeTime: '22:30' },
             // Basse saison - fermé lundi
-            { season: Season.BASSE, dayOfWeek: 0, openTime: '07:00', closeTime: '22:00' },
+            { season: 'BASSE', dayOfWeek: 0, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 1, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 2, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 3, openTime: '07:00', closeTime: '22:00' },
@@ -85,7 +85,7 @@ async function seedRH() {
     prisma.service.create({
       data: {
         name: 'Piscine',
-        type: ServiceType.AUTRE,
+        type: 'AUTRE',
         color: '#ba8a36',
         schedules: {
           create: [
@@ -112,7 +112,7 @@ async function seedRH() {
     prisma.service.create({
       data: {
         name: 'Housekeeping',
-        type: ServiceType.AUTRE,
+        type: 'AUTRE',
         color: '#f89032',
         schedules: {
           create: [
@@ -147,8 +147,8 @@ async function seedRH() {
         firstName: 'Marie',
         lastName: 'Dubois',
         mainServiceId: services[0].id, // Réception
-        contractType: ContractType.CDI,
-        weeklyHours: WeeklyHours.H39,
+        contractType: 'CDI',
+        weeklyHours: 'H39',
         salaryGridId: salaryGrids[2].id, // Level 2, Echelon 1
         polyvalentServices: {
           create: [
@@ -162,8 +162,8 @@ async function seedRH() {
         firstName: 'Jean',
         lastName: 'Martin',
         mainServiceId: services[1].id, // Restaurant
-        contractType: ContractType.CDI,
-        weeklyHours: WeeklyHours.H35,
+        contractType: 'CDI',
+        weeklyHours: 'H35',
         salaryGridId: salaryGrids[1].id, // Level 1, Echelon 2
         polyvalentServices: {
           create: [
@@ -177,8 +177,8 @@ async function seedRH() {
         firstName: 'Sophie',
         lastName: 'Bernard',
         mainServiceId: services[2].id, // Piscine
-        contractType: ContractType.SAISONNIER,
-        weeklyHours: WeeklyHours.H39,
+        contractType: 'SAISONNIER',
+        weeklyHours: 'H39',
         salaryGridId: salaryGrids[0].id, // Level 1, Echelon 1
         polyvalentServices: {
           create: [

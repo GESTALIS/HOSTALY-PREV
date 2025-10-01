@@ -1,4 +1,4 @@
-import { PrismaClient, Season } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -7,11 +7,11 @@ async function seedCalendar(zone: 'A', years: number) {
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setFullYear(start.getFullYear() + years);
-  const data: { date: Date; season: Season; zoneAIsHoliday: boolean }[] = [];
+  const data: { date: Date; season: string; zoneAIsHoliday: boolean }[] = [];
   const d = new Date(start);
   while (d < end) {
     const month = d.getMonth();
-    const season: Season = [5, 6, 7].includes(month) ? 'HAUTE' : 'BASSE';
+    const season: string = [5, 6, 7].includes(month) ? 'HAUTE' : 'BASSE';
     const dow = d.getDay();
     const zoneAIsHoliday = dow === 0 || dow === 6; // weekends only placeholder
     data.push({ date: new Date(d), season, zoneAIsHoliday });
