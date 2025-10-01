@@ -1,19 +1,19 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { requireAuth } from './auth.js';
+const { Router } = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('./auth');
 
 const prisma = new PrismaClient();
 const rhRouter = Router();
 
 // Route de test sans authentification
-rhRouter.get('/test', (req: Request, res: Response) => {
+rhRouter.get('/test', (req: any, res: any) => {
   res.json({ message: 'API RH fonctionne !', timestamp: new Date().toISOString() });
 });
 
 // === GESTION EMPLOYÉS ===
 
 // GET /api/v1/rh/employees - Liste des employés avec filtres
-rhRouter.get('/employees', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.get('/employees', async (req: any, res: any, next: any) => {
   try {
     const { serviceId, serviceName } = req.query;
     
@@ -73,7 +73,7 @@ rhRouter.get('/employees', async (req: Request, res: Response, next: NextFunctio
 });
 
 // POST /api/v1/rh/employees - Créer un employé
-rhRouter.post('/employees', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.post('/employees', async (req: any, res: any, next: any) => {
   try {
     const { 
       fullName, 
@@ -137,7 +137,7 @@ rhRouter.post('/employees', async (req: Request, res: Response, next: NextFuncti
         annualLeaveRate: annualLeaveRate ? Number(annualLeaveRate) : null,
         thirteenthMonthRate: thirteenthMonthRate ? Number(thirteenthMonthRate) : null,
         polyvalentServices: {
-          create: polyvalentServiceIds.map((serviceId: number) => ({
+          create: polyvalentServiceIds.map((serviceId: any) => ({
             serviceId: Number(serviceId)
           }))
         }
@@ -175,7 +175,7 @@ rhRouter.post('/employees', async (req: Request, res: Response, next: NextFuncti
 });
 
 // PUT /api/v1/rh/employees/:id - Modifier un employé
-rhRouter.put('/employees/:id', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.put('/employees/:id', async (req: any, res: any, next: any) => {
   try {
     const id = Number(req.params.id);
     const { 
@@ -255,7 +255,7 @@ rhRouter.put('/employees/:id', async (req: Request, res: Response, next: NextFun
 });
 
 // DELETE /api/v1/rh/employees/:id - Supprimer un employé
-rhRouter.delete('/employees/:id', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.delete('/employees/:id', async (req: any, res: any, next: any) => {
   try {
     const id = Number(req.params.id);
     
@@ -276,7 +276,7 @@ rhRouter.delete('/employees/:id', async (req: Request, res: Response, next: Next
 // === GESTION SERVICES ===
 
 // GET /api/v1/rh/services - Liste des services
-rhRouter.get('/services', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.get('/services', async (req: any, res: any, next: any) => {
   try {
     const services = await prisma.service.findMany({
       where: { isActive: true },
@@ -299,7 +299,7 @@ rhRouter.get('/services', async (req: Request, res: Response, next: NextFunction
 });
 
 // POST /api/v1/rh/services - Créer un service
-rhRouter.post('/services', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.post('/services', async (req: any, res: any, next: any) => {
   try {
     const { name, type, color, isActive = true, schedules = [] } = req.body;
 
@@ -390,7 +390,7 @@ rhRouter.post('/services', async (req: Request, res: Response, next: NextFunctio
 });
 
 // PUT /api/v1/rh/services/:id - Modifier un service
-rhRouter.put('/services/:id', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.put('/services/:id', async (req: any, res: any, next: any) => {
   try {
     const { id } = req.params;
     const { name, type, color, isActive, schedules = [] } = req.body;
@@ -492,7 +492,7 @@ rhRouter.put('/services/:id', async (req: Request, res: Response, next: NextFunc
 });
 
 // DELETE /api/v1/rh/services/:id - Supprimer un service
-rhRouter.delete('/services/:id', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.delete('/services/:id', async (req: any, res: any, next: any) => {
   try {
     const { id } = req.params;
 
@@ -582,7 +582,7 @@ rhRouter.delete('/services/:id', async (req: Request, res: Response, next: NextF
 // === GESTION EMPLOYÉS HOUSEKEEPING ===
 
 // GET /api/v1/rh/employees/housekeeping - Récupérer les employés housekeeping
-rhRouter.get('/employees/housekeeping', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.get('/employees/housekeeping', async (req: any, res: any, next: any) => {
   try {
     // Trouver le service housekeeping
     const housekeepingService = await prisma.service.findFirst({
@@ -632,7 +632,7 @@ rhRouter.get('/employees/housekeeping', async (req: Request, res: Response, next
 // === GESTION SAISONNALITÉ GUYANE ===
 
 // GET /api/v1/rh/seasons - Obtenir les périodes de saisonnalité
-rhRouter.get('/seasons', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.get('/seasons', async (req: any, res: any, next: any) => {
   try {
     const currentYear = new Date().getFullYear();
     
@@ -704,7 +704,7 @@ function getCurrentSeason() {
 }
 
 // GET /api/v1/rh/services/:id/schedules - Obtenir les horaires d'un service
-rhRouter.get('/services/:id/schedules', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.get('/services/:id/schedules', async (req: any, res: any, next: any) => {
   try {
     const { id } = req.params;
     const { season } = req.query;
@@ -727,7 +727,7 @@ rhRouter.get('/services/:id/schedules', async (req: Request, res: Response, next
 // === CONFIGURATION RH GÉNÉRALE ===
 
 // GET /api/v1/rh/config - Obtenir la configuration RH
-rhRouter.get('/config', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.get('/config', async (req: any, res: any, next: any) => {
   try {
     const config = {
       // Règles générales
@@ -787,7 +787,7 @@ rhRouter.get('/config', async (req: Request, res: Response, next: NextFunction) 
 });
 
 // PUT /api/v1/rh/config - Mettre à jour la configuration RH
-rhRouter.put('/config', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.put('/config', async (req: any, res: any, next: any) => {
   try {
     const { generalRules, timeRules, leaveRules, housekeeping } = req.body;
 
@@ -834,11 +834,11 @@ rhRouter.put('/config', async (req: Request, res: Response, next: NextFunction) 
 // === GESTION GRILLES SALARIALES ===
 
 // GET /api/v1/rh/salary-grid - Liste des grilles salariales
-rhRouter.get('/salary-grid', async (req: Request, res: Response, next: NextFunction) => {
+rhRouter.get('/salary-grid', async (req: any, res: any, next: any) => {
   try {
     const salaryGrids = await prisma.salaryGrid.findMany();
     res.json(salaryGrids);
   } catch (e) { next(e); }
 });
 
-export default rhRouter;
+module.exports = rhRouter;

@@ -1,12 +1,12 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from './auth.js';
+const { Router } = require('express');
+const { requireAuth } = require('./auth');
 
 const simulateRouter = Router();
 
-simulateRouter.post('/:id', requireAuth, (req: Request, res: Response) => {
+simulateRouter.post('/:id', requireAuth, (req: any, res: any) => {
   res.status(501).json({ code: 'NOT_IMPLEMENTED', message: 'Simulation non implémentée en Phase 0' });
 });
 
-export { simulateRouter };
+module.exports = { simulateRouter };
 
 

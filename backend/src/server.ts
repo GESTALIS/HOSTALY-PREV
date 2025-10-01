@@ -1,12 +1,12 @@
-import 'dotenv/config';
-import express from 'express';
-import helmet from 'helmet';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
-import pino from 'pino';
-import pinoHttp from 'pino-http';
-import { v4 as uuidv4 } from 'uuid';
-import { router as apiRouter } from './routes/api_v1.js';
+require('dotenv/config');
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const pino = require('pino');
+const pinoHttp = require('pino-http');
+const { v4: uuidv4 } = require('uuid');
+const { router: apiRouter } = require('./routes/api_v1');
 
 const app = express();
 

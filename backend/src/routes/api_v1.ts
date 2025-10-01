@@ -1,11 +1,11 @@
-import { Router } from 'express';
-import { healthRouter } from './health.js';
-import { authRouter } from './auth.js';
-import { scenariosRouter } from './scenarios.js';
-import { calendarRouter } from './calendar.js';
-import { resultsRouter } from './results.js';
-import { simulateRouter } from './simulate.js';
-import rhRouter from './rh.js';
+const { Router } = require('express');
+const { healthRouter } = require('./health');
+const { authRouter } = require('./auth');
+const { scenariosRouter } = require('./scenarios');
+const { calendarRouter } = require('./calendar');
+const { resultsRouter } = require('./results');
+const { simulateRouter } = require('./simulate');
+const rhRouter = require('./rh');
 
 const router = Router();
 
@@ -17,6 +17,6 @@ router.use('/results', resultsRouter);
 router.use('/simulate', simulateRouter);
 router.use('/rh', rhRouter);
 
-export { router };
+module.exports = { router };
 
 

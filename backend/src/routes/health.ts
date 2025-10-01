@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
+const { Router } = require('express');
 
 const healthRouter = Router();
 
-healthRouter.get('/', (req: Request, res: Response) => {
+healthRouter.get('/', (req: any, res: any) => {
   res.status(200).json({ status: 'ok' });
 });
 
-export { healthRouter };
+module.exports = { healthRouter };
 
 

@@ -1,18 +1,18 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { requireAuth } from './auth.js';
+const { Router } = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('./auth');
 
 const prisma = new PrismaClient();
 const scenariosRouter = Router();
 
-scenariosRouter.get('/', requireAuth, async (_req: Request, res: Response, next: NextFunction) => {
+scenariosRouter.get('/', requireAuth, async (_req: any, res: any, next: any) => {
   try {
     const scenarios = await prisma.scenario.findMany();
     res.json(scenarios);
   } catch (e) { next(e); }
 });
 
-scenariosRouter.post('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+scenariosRouter.post('/', requireAuth, async (req: any, res: any, next: any) => {
   try {
     const { name, horizonYears = 5, isActive = false } = req.body || {};
     const scenario = await prisma.scenario.create({ data: { name, horizonYears, isActive } });
@@ -20,7 +20,7 @@ scenariosRouter.post('/', requireAuth, async (req: Request, res: Response, next:
   } catch (e) { next(e); }
 });
 
-scenariosRouter.delete('/:id', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+scenariosRouter.delete('/:id', requireAuth, async (req: any, res: any, next: any) => {
   try {
     const id = Number(req.params.id);
     await prisma.scenario.delete({ where: { id } });
@@ -28,7 +28,7 @@ scenariosRouter.delete('/:id', requireAuth, async (req: Request, res: Response, 
   } catch (e) { next(e); }
 });
 
-scenariosRouter.put('/:id/assumptions', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+scenariosRouter.put('/:id/assumptions', requireAuth, async (req: any, res: any, next: any) => {
   try {
     const id = Number(req.params.id);
     const { revenues = [], charges = [], payroll = [], openings = [] } = req.body || {};
@@ -58,6 +58,6 @@ scenariosRouter.put('/:id/assumptions', requireAuth, async (req: Request, res: R
   } catch (e) { next(e); }
 });
 
-export { scenariosRouter };
+module.exports = { scenariosRouter };
 
 

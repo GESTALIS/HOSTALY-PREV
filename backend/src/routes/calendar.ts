@@ -1,17 +1,17 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { requireAuth } from './auth.js';
+const { Router } = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('./auth');
 
 const prisma = new PrismaClient();
 const calendarRouter = Router();
 
-calendarRouter.get('/zone-a', requireAuth, async (_req: Request, res: Response, next: NextFunction) => {
+calendarRouter.get('/zone-a', requireAuth, async (_req: any, res: any, next: any) => {
   try {
     const rows = await prisma.calendarDate.findMany({ orderBy: { date: 'asc' } });
     res.json(rows);
   } catch (e) { next(e); }
 });
 
-export { calendarRouter };
+module.exports = { calendarRouter };
 
 
