@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { healthRouter } from './health';
-import { authRouter } from './auth';
-import { scenariosRouter } from './scenarios';
-import { calendarRouter } from './calendar';
-import { resultsRouter } from './results';
-import { simulateRouter } from './simulate';
-import rhRouter from './rh';
+import { healthRouter } from './health.js';
+import { authRouter } from './auth.js';
+import { scenariosRouter } from './scenarios.js';
+import { calendarRouter } from './calendar.js';
+import { resultsRouter } from './results.js';
+import { simulateRouter } from './simulate.js';
+import rhRouter from './rh.js';
 
 const router = Router();
 

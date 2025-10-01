@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { requireAuth } from './auth';
+import { requireAuth } from './auth.js';
 
 const prisma = new PrismaClient();
 const calendarRouter = Router();
