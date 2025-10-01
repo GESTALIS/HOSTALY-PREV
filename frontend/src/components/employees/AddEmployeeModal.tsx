@@ -33,6 +33,7 @@ interface Employee {
   id: number;
   firstName: string;
   lastName: string;
+  fullName?: string;
   contractType: string;
   weeklyHours: string;
   isActive: boolean;
@@ -49,6 +50,14 @@ interface Employee {
   minWeeklyHours?: number;
   maxWeeklyHours?: number;
   preferredShifts?: string[];
+  
+  // Nouveaux champs pour la masse salariale
+  compensationMode?: 'HOURLY' | 'MONTHLY';
+  grossMonthlyBase?: number;
+  grossHourlyRate?: number;
+  employerChargeRateFactor?: number;
+  annualLeaveRate?: number;
+  thirteenthMonthRate?: number;
 }
 
 const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
@@ -60,58 +69,79 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   employeeToEdit = null
 }) => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     mainServiceId: '',
     contractType: '',
     weeklyHours: '',
     salaryLevel: '',
     salaryEchelon: '',
     hourlyRate: '',
-    polyvalentServiceIds: [],
+    polyvalentServiceIds: [] as number[],
     isActive: true,
     flexibilityType: 'STANDARD',
     minWeeklyHours: '',
     maxWeeklyHours: '',
-    preferredShifts: []
+    preferredShifts: [] as string[],
+    
+    // Nouveaux champs pour la masse salariale
+    compensationMode: 'MONTHLY' as 'HOURLY' | 'MONTHLY',
+    grossMonthlyBase: '',
+    grossHourlyRate: '',
+    employerChargeRateFactor: '',
+    annualLeaveRate: '',
+    thirteenthMonthRate: ''
   });
 
   // Mettre à jour le formData quand employeeToEdit change
   useEffect(() => {
     if (employeeToEdit) {
       setFormData({
-        firstName: employeeToEdit.firstName || '',
-        lastName: employeeToEdit.lastName || '',
+        fullName: employeeToEdit.fullName || `${employeeToEdit.firstName || ''} ${employeeToEdit.lastName || ''}`.trim(),
         mainServiceId: employeeToEdit.mainService?.id?.toString() || '',
         contractType: employeeToEdit.contractType || '',
         weeklyHours: employeeToEdit.weeklyHours || '',
         salaryLevel: employeeToEdit.salaryGrid?.level?.toString() || '',
         salaryEchelon: employeeToEdit.salaryGrid?.echelon?.toString() || '',
         hourlyRate: employeeToEdit.salaryGrid?.hourlyRate?.toString() || '',
-        polyvalentServiceIds: employeeToEdit.polyvalentServices?.map(ps => ps.service.id) || [],
+        polyvalentServiceIds: employeeToEdit.polyvalentServices?.map(ps => ps.service.id) || [] as number[],
         isActive: employeeToEdit.isActive ?? true,
         flexibilityType: employeeToEdit.flexibilityType || 'STANDARD',
         minWeeklyHours: employeeToEdit.minWeeklyHours?.toString() || '',
         maxWeeklyHours: employeeToEdit.maxWeeklyHours?.toString() || '',
-        preferredShifts: employeeToEdit.preferredShifts || []
+        preferredShifts: employeeToEdit.preferredShifts || [] as string[],
+        
+        // Nouveaux champs pour la masse salariale
+        compensationMode: employeeToEdit.compensationMode || 'MONTHLY',
+        grossMonthlyBase: employeeToEdit.grossMonthlyBase?.toString() || '',
+        grossHourlyRate: employeeToEdit.grossHourlyRate?.toString() || '',
+        employerChargeRateFactor: employeeToEdit.employerChargeRateFactor?.toString() || '',
+        annualLeaveRate: employeeToEdit.annualLeaveRate?.toString() || '',
+        thirteenthMonthRate: employeeToEdit.thirteenthMonthRate?.toString() || ''
       });
     } else {
       // Réinitialiser le formulaire pour un nouvel employé
       setFormData({
-        firstName: '',
-        lastName: '',
+        fullName: '',
         mainServiceId: '',
         contractType: '',
         weeklyHours: '',
         salaryLevel: '',
         salaryEchelon: '',
         hourlyRate: '',
-        polyvalentServiceIds: [],
+        polyvalentServiceIds: [] as number[],
         isActive: true,
         flexibilityType: 'STANDARD',
         minWeeklyHours: '',
         maxWeeklyHours: '',
-        preferredShifts: []
+        preferredShifts: [] as string[],
+        
+        // Nouveaux champs pour la masse salariale
+        compensationMode: 'MONTHLY' as 'HOURLY' | 'MONTHLY',
+        grossMonthlyBase: '',
+        grossHourlyRate: '',
+        employerChargeRateFactor: '',
+        annualLeaveRate: '',
+        thirteenthMonthRate: ''
       });
     }
   }, [employeeToEdit]);
@@ -166,10 +196,21 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       setIsSubmitting(true);
       
       // Validation simple
-      if (!formData.firstName || !formData.lastName || !formData.mainServiceId || 
+      if (!formData.fullName || !formData.mainServiceId || 
           !formData.contractType || !formData.weeklyHours || !formData.salaryLevel || 
           !formData.salaryEchelon || !formData.hourlyRate) {
         alert('Veuillez remplir tous les champs obligatoires');
+        return;
+      }
+
+      // Validation des nouveaux champs
+      if (formData.compensationMode === 'MONTHLY' && !formData.grossMonthlyBase) {
+        alert('Veuillez saisir le salaire mensuel brut');
+        return;
+      }
+      
+      if (!formData.employerChargeRateFactor) {
+        alert('Veuillez saisir le taux de charges patronales');
         return;
       }
 
@@ -206,7 +247,14 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         flexibilityType: formData.flexibilityType,
         minWeeklyHours: formData.minWeeklyHours ? parseInt(formData.minWeeklyHours) : null,
         maxWeeklyHours: formData.maxWeeklyHours ? parseInt(formData.maxWeeklyHours) : null,
-        preferredShifts: formData.preferredShifts
+        preferredShifts: formData.preferredShifts,
+        
+        // Nouveaux champs pour la masse salariale
+        grossMonthlyBase: formData.grossMonthlyBase ? parseFloat(formData.grossMonthlyBase) : null,
+        grossHourlyRate: formData.grossHourlyRate ? parseFloat(formData.grossHourlyRate) : null,
+        employerChargeRateFactor: formData.employerChargeRateFactor ? parseFloat(formData.employerChargeRateFactor) : null,
+        annualLeaveRate: formData.annualLeaveRate ? parseFloat(formData.annualLeaveRate) : null,
+        thirteenthMonthRate: formData.thirteenthMonthRate ? parseFloat(formData.thirteenthMonthRate) : null
       };
       
       console.log('🔍 Données envoyées:', payload);
@@ -229,16 +277,25 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       
       if (response.ok) {
         setFormData({
-          firstName: '',
-          lastName: '',
+          fullName: '',
           mainServiceId: '',
           contractType: '',
           weeklyHours: '',
           salaryLevel: '',
           salaryEchelon: '',
           hourlyRate: '',
-          polyvalentServiceIds: [],
-          isActive: true
+          polyvalentServiceIds: [] as number[],
+          isActive: true,
+          flexibilityType: 'STANDARD',
+          minWeeklyHours: '',
+          maxWeeklyHours: '',
+          preferredShifts: [] as string[],
+          compensationMode: 'MONTHLY' as 'HOURLY' | 'MONTHLY',
+          grossMonthlyBase: '',
+          grossHourlyRate: '',
+          employerChargeRateFactor: '',
+          annualLeaveRate: '',
+          thirteenthMonthRate: ''
         });
         onSuccess();
         onClose();
@@ -258,20 +315,25 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
 
   const handleClose = () => {
     setFormData({
-      firstName: '',
-      lastName: '',
+      fullName: '',
       mainServiceId: '',
       contractType: '',
       weeklyHours: '',
       salaryLevel: '',
       salaryEchelon: '',
       hourlyRate: '',
-      polyvalentServiceIds: [],
+      polyvalentServiceIds: [] as number[],
       isActive: true,
       flexibilityType: 'STANDARD',
       minWeeklyHours: '',
       maxWeeklyHours: '',
-      preferredShifts: []
+      preferredShifts: [] as string[],
+      compensationMode: 'MONTHLY' as 'HOURLY' | 'MONTHLY',
+      grossMonthlyBase: '',
+      grossHourlyRate: '',
+      employerChargeRateFactor: '',
+      annualLeaveRate: '',
+      thirteenthMonthRate: ''
     });
     onClose();
   };
@@ -322,36 +384,19 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
             {/* Formulaire */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Informations personnelles */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Prénom *
-                  </label>
-                  <input
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
-                    placeholder="Prénom de l'employé"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom *
-                  </label>
-                  <input
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
-                    placeholder="Nom de l'employé"
-                    required
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom complet *
+                </label>
+                <input
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                  placeholder="Nom et prénom de l'employé"
+                  required
+                />
               </div>
 
               {/* Service principal et type de contrat */}
@@ -479,6 +524,129 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                       required
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Nouveaux champs pour la masse salariale */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Rémunération pour masse salariale</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mode de rémunération *
+                    </label>
+                    <select
+                      name="compensationMode"
+                      value={formData.compensationMode}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                      required
+                    >
+                      <option value="MONTHLY">Mensuel</option>
+                      <option value="HOURLY">Horaire</option>
+                    </select>
+                  </div>
+
+                  {formData.compensationMode === 'MONTHLY' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Salaire mensuel brut (€) *
+                      </label>
+                      <input
+                        type="number"
+                        name="grossMonthlyBase"
+                        value={formData.grossMonthlyBase}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        min="0"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                        placeholder="1852.77"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {formData.compensationMode === 'HOURLY' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Taux horaire brut (€) *
+                      </label>
+                      <input
+                        type="number"
+                        name="grossHourlyRate"
+                        value={formData.grossHourlyRate}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        min="0"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                        placeholder="12.27"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Taux de charges patronales *
+                    </label>
+                    <input
+                      type="number"
+                      name="employerChargeRateFactor"
+                      value={formData.employerChargeRateFactor}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                      placeholder="1.25"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Facteur multiplicateur (ex: 1.25 = 25% de charges)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Congés payés (%)
+                    </label>
+                    <input
+                      type="number"
+                      name="annualLeaveRate"
+                      value={formData.annualLeaveRate || ''}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                      placeholder="10.00"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Pourcentage du salaire annuel (ex: 10% = 10.00)
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    13ème mois (%)
+                  </label>
+                  <input
+                    type="number"
+                    name="thirteenthMonthRate"
+                    value={formData.thirteenthMonthRate || ''}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotaly-primary focus:border-transparent"
+                    placeholder="8.33"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Pourcentage du 13ème mois (0 = pas de 13ème mois)
+                  </p>
                 </div>
               </div>
 
@@ -645,7 +813,6 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               {/* Actions */}
               <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                 <Button
-                  type="button"
                   variant="outline"
                   onClick={handleClose}
                   disabled={isSubmitting}
@@ -653,7 +820,6 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   Annuler
                 </Button>
                 <Button
-                  type="submit"
                   variant="primary"
                   disabled={isSubmitting}
                   className="min-w-[120px]"

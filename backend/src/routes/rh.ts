@@ -21,7 +21,31 @@ rhRouter.get('/test', (req, res) => {
 // GET /api/v1/rh/employees - Liste des employés avec filtres
 rhRouter.get('/employees', async (req, res, next) => {
   try {
+    const { serviceId, serviceName } = req.query;
+    
+    let whereClause = {};
+    
+    // Filtrer par service si spécifié
+    if (serviceId) {
+      whereClause = { mainServiceId: parseInt(serviceId as string) };
+    } else if (serviceName) {
+      // Trouver le service par nom
+      const service = await prisma.service.findFirst({
+        where: { 
+          name: { 
+            equals: serviceName as string, 
+            mode: 'insensitive' 
+          } 
+        }
+      });
+      
+      if (service) {
+        whereClause = { mainServiceId: service.id };
+      }
+    }
+
     const employees = await prisma.employee.findMany({
+      where: whereClause,
       include: {
         mainService: {
           select: {
@@ -57,7 +81,38 @@ rhRouter.get('/employees', async (req, res, next) => {
 // POST /api/v1/rh/employees - Créer un employé
 rhRouter.post('/employees', async (req, res, next) => {
   try {
-    const { firstName, lastName, mainServiceId, contractType, weeklyHours, salaryLevel, salaryEchelon, hourlyRate, polyvalentServiceIds = [] } = req.body;
+    const { 
+      fullName, 
+      firstName, 
+      lastName, 
+      mainServiceId, 
+      contractType, 
+      weeklyHours, 
+      salaryLevel, 
+      salaryEchelon, 
+      hourlyRate, 
+      polyvalentServiceIds = [],
+      compensationMode = 'MONTHLY',
+      grossMonthlyBase,
+      grossHourlyRate,
+      employerChargeRateFactor,
+      annualLeaveRate,
+      thirteenthMonthRate
+    } = req.body;
+
+    // Gérer le nom complet
+    let finalFirstName = firstName;
+    let finalLastName = lastName;
+    
+    if (fullName && !firstName && !lastName) {
+      // Si on a fullName mais pas firstName/lastName, on les extrait
+      const nameParts = fullName.trim().split(' ');
+      finalLastName = nameParts[0] || '';
+      finalFirstName = nameParts.slice(1).join(' ') || '';
+    } else if (!fullName && firstName && lastName) {
+      // Si on a firstName/lastName mais pas fullName, on le construit
+      // fullName sera géré par la base de données
+    }
 
     // Créer d'abord la grille salariale
     const salaryGrid = await prisma.salaryGrid.create({
@@ -73,13 +128,20 @@ rhRouter.post('/employees', async (req, res, next) => {
     // Créer l'employé avec polyvalence
     const employee = await prisma.employee.create({
       data: {
-        firstName,
-        lastName,
+        firstName: finalFirstName,
+        lastName: finalLastName,
+        fullName: fullName || `${finalFirstName} ${finalLastName}`.trim(),
         contractType,
         weeklyHours,
         isActive: true,
         mainServiceId: Number(mainServiceId),
         salaryGridId: salaryGrid.id,
+        compensationMode,
+        grossMonthlyBase: grossMonthlyBase ? Number(grossMonthlyBase) : null,
+        grossHourlyRate: grossHourlyRate ? Number(grossHourlyRate) : null,
+        employerChargeRateFactor: employerChargeRateFactor ? Number(employerChargeRateFactor) : null,
+        annualLeaveRate: annualLeaveRate ? Number(annualLeaveRate) : null,
+        thirteenthMonthRate: thirteenthMonthRate ? Number(thirteenthMonthRate) : null,
         polyvalentServices: {
           create: polyvalentServiceIds.map(serviceId => ({
             serviceId: Number(serviceId)
@@ -122,17 +184,49 @@ rhRouter.post('/employees', async (req, res, next) => {
 rhRouter.put('/employees/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { firstName, lastName, mainServiceId, contractType, weeklyHours, isActive } = req.body;
+    const { 
+      fullName, 
+      firstName, 
+      lastName, 
+      mainServiceId, 
+      contractType, 
+      weeklyHours, 
+      isActive,
+      compensationMode,
+      grossMonthlyBase,
+      grossHourlyRate,
+      employerChargeRateFactor,
+      annualLeaveRate,
+      thirteenthMonthRate
+    } = req.body;
+
+    // Gérer le nom complet
+    let finalFirstName = firstName;
+    let finalLastName = lastName;
+    
+    if (fullName && !firstName && !lastName) {
+      // Si on a fullName mais pas firstName/lastName, on les extrait
+      const nameParts = fullName.trim().split(' ');
+      finalLastName = nameParts[0] || '';
+      finalFirstName = nameParts.slice(1).join(' ') || '';
+    }
 
     const updatedEmployee = await prisma.employee.update({
       where: { id },
       data: {
-        firstName,
-        lastName,
+        firstName: finalFirstName,
+        lastName: finalLastName,
+        fullName: fullName || `${finalFirstName} ${finalLastName}`.trim(),
         mainServiceId: Number(mainServiceId),
         contractType,
         weeklyHours,
-        isActive
+        isActive,
+        compensationMode,
+        grossMonthlyBase: grossMonthlyBase ? Number(grossMonthlyBase) : null,
+        grossHourlyRate: grossHourlyRate ? Number(grossHourlyRate) : null,
+        employerChargeRateFactor: employerChargeRateFactor ? Number(employerChargeRateFactor) : null,
+        annualLeaveRate: annualLeaveRate ? Number(annualLeaveRate) : null,
+        thirteenthMonthRate: thirteenthMonthRate ? Number(thirteenthMonthRate) : null
       },
       include: {
         mainService: {
@@ -489,6 +583,56 @@ rhRouter.delete('/services/:id', async (req, res, next) => {
     console.error('Erreur suppression service:', e);
     next(e); 
   }
+});
+
+// === GESTION EMPLOYÉS HOUSEKEEPING ===
+
+// GET /api/v1/rh/employees/housekeeping - Récupérer les employés housekeeping
+rhRouter.get('/employees/housekeeping', async (req, res, next) => {
+  try {
+    // Trouver le service housekeeping
+    const housekeepingService = await prisma.service.findFirst({
+      where: { 
+        name: { 
+          equals: 'housekeeping', 
+          mode: 'insensitive' 
+        } 
+      }
+    });
+
+    if (!housekeepingService) {
+      return res.status(404).json({
+        code: 'SERVICE_NOT_FOUND',
+        message: 'Service housekeeping non trouvé'
+      });
+    }
+
+    // Récupérer les employés avec service principal housekeeping
+    const employees = await prisma.employee.findMany({
+      where: { 
+        mainServiceId: housekeepingService.id,
+        isActive: true
+      },
+      include: {
+        mainService: {
+          select: {
+            id: true,
+            name: true,
+            color: true
+          }
+        },
+        salaryGrid: {
+          select: {
+            level: true,
+            echelon: true,
+            hourlyRate: true
+          }
+        }
+      }
+    });
+
+    res.json(employees);
+  } catch (e) { next(e); }
 });
 
 // === GESTION SAISONNALITÉ GUYANE ===

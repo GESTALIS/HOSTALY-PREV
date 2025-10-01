@@ -96,24 +96,34 @@ model ServiceSchedule {
 }
 
 model Employee {
-  id                 Int                   @id @default(autoincrement())
-  firstName          String
-  lastName           String
-  mainServiceId      Int
-  contractType       ContractType
-  weeklyHours        WeeklyHours
-  salaryGridId       Int
-  isActive           Boolean               @default(true)
-  flexibilityType    FlexibilityType       @default(STANDARD)
-  minWeeklyHours     Int?                 @default(0)
-  maxWeeklyHours     Int?                 @default(35)
-  preferredShifts    String[]             @default([])
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  mainService        Service              @relation(fields: [mainServiceId], references: [id])
-  salaryGrid         SalaryGrid           @relation(fields: [salaryGridId], references: [id])
-  polyvalentServices EmployeePolyvalence[]
-  schedules          EmployeeSchedule[]
+  id                     Int                   @id @default(autoincrement())
+  firstName              String
+  lastName               String
+  fullName               String?               // Nouveau champ pour l'affichage
+  mainServiceId          Int
+  contractType           ContractType
+  weeklyHours            WeeklyHours
+  salaryGridId           Int
+  isActive               Boolean               @default(true)
+  flexibilityType        FlexibilityType       @default(STANDARD)
+  minWeeklyHours         Int?                 @default(0)
+  maxWeeklyHours         Int?                 @default(35)
+  preferredShifts        String[]             @default([])
+  
+  // Nouveaux champs pour la masse salariale
+  compensationMode       CompensationMode      @default(MONTHLY)
+  grossMonthlyBase       Decimal?             @db.Decimal(10, 2)
+  grossHourlyRate        Decimal?             @db.Decimal(8, 2)
+  employerChargeRateFactor Decimal?           @db.Decimal(5, 2)
+  annualLeaveRate        Decimal?             @db.Decimal(5, 2)
+  thirteenthMonthRate    Decimal?             @db.Decimal(5, 2)
+  
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  mainService            Service              @relation(fields: [mainServiceId], references: [id])
+  salaryGrid             SalaryGrid           @relation(fields: [salaryGridId], references: [id])
+  polyvalentServices     EmployeePolyvalence[]
+  schedules              EmployeeSchedule[]
 }
 
 model EmployeePolyvalence {
@@ -237,3 +247,9 @@ enum ServiceType {
   RESTAURATION
   AUTRE
 }
+
+enum CompensationMode {
+  HOURLY
+  MONTHLY
+}
+

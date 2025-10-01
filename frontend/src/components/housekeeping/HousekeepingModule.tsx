@@ -178,42 +178,49 @@ const HousekeepingModule: React.FC = () => {
   const [newScenarioName, setNewScenarioName] = useState('');
   const [newScenarioDescription, setNewScenarioDescription] = useState('');
   
-  // Données des employés Housekeeping avec jours de repos décalés
-  const [employees, setEmployees] = useState<EmployeeSchedule[]>([
-    {
-      id: 1,
-      name: 'Marie Dubois',
-      weeklyHours: 35,
-      workingDays: [1, 2, 3, 4, 5], // Lundi à Vendredi
-      startTime: '10:00',
-      endTime: '17:00',
-      breakDuration: 60,
-      isActive: true
-    },
-    {
-      id: 2,
-      name: 'Sophie Martin',
-      weeklyHours: 35,
-      workingDays: [1, 2, 3, 4, 6], // Lundi à Jeudi + Samedi
-      startTime: '10:30',
-      endTime: '17:30',
-      breakDuration: 60,
-      isActive: true
-    },
-    {
-      id: 3,
-      name: 'Claire Bernard',
-      weeklyHours: 35,
-      workingDays: [2, 3, 4, 5, 7], // Mardi à Vendredi + Dimanche
-      startTime: '11:00',
-      endTime: '18:00',
-      breakDuration: 60,
-      isActive: true
-    }
-  ]);
+  // Données des employés Housekeeping récupérées depuis la base de données
+  const [employees, setEmployees] = useState<EmployeeSchedule[]>([]);
+  const [housekeepingEmployees, setHousekeepingEmployees] = useState<any[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
   
   const [annualPlannings, setAnnualPlannings] = useState<AnnualPlanning[]>([]);
   const [realRecommendations, setRealRecommendations] = useState<RealRecommendation[]>([]);
+
+  // Récupérer les employés housekeeping depuis la base de données
+  useEffect(() => {
+    const fetchHousekeepingEmployees = async () => {
+      setLoadingEmployees(true);
+      try {
+        const response = await fetch('/api/v1/rh/employees/housekeeping');
+        if (response.ok) {
+          const data = await response.json();
+          setHousekeepingEmployees(data);
+          
+          // Convertir les employés de la base de données en format EmployeeSchedule
+          const convertedEmployees: EmployeeSchedule[] = data.map((emp: any, index: number) => ({
+            id: emp.id,
+            name: emp.fullName || `${emp.firstName} ${emp.lastName}`,
+            weeklyHours: parseInt(emp.weeklyHours) || 35,
+            workingDays: [1, 2, 3, 4, 5], // Par défaut lundi à vendredi
+            startTime: '10:00',
+            endTime: '17:00',
+            breakDuration: 60,
+            isActive: emp.isActive
+          }));
+          
+          setEmployees(convertedEmployees);
+        } else {
+          console.error('Erreur lors de la récupération des employés housekeeping');
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des employés housekeeping:', error);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    };
+
+    fetchHousekeepingEmployees();
+  }, []);
 
   useEffect(() => {
     calculateStaff();
@@ -498,18 +505,24 @@ const HousekeepingModule: React.FC = () => {
 
   // Fonctions pour la validation
   const handleValidatePlanning = () => {
-    // Simuler une recommandation pour démonstration
+    // Utiliser les vrais employés si disponibles, sinon données par défaut
+    const firstEmployee = employees.length > 0 ? employees[0] : {
+      id: 1,
+      name: 'Employé Housekeeping',
+      weeklyHours: 35
+    };
+    
     const mockRecommendation = {
       type: 'sur-charge' as const,
       employee: {
-        id: 1,
-        name: 'Marie Dubois',
-        currentHours: 35,
-        projectedHours: 39
+        id: firstEmployee.id,
+        name: firstEmployee.name,
+        currentHours: firstEmployee.weeklyHours,
+        projectedHours: firstEmployee.weeklyHours + 4
       },
       recommendation: {
         type: 'contract_change' as const,
-        details: { targetHours: 39 }
+        details: { targetHours: firstEmployee.weeklyHours + 4 }
       },
       impact: {
         coverage: 95,
@@ -673,7 +686,7 @@ const HousekeepingModule: React.FC = () => {
 
   // Fonctions pour le planning personnalisé
   const handleCustomScheduleChange = (employeeId: number, day: string, field: 'start' | 'end' | 'working', value: string | boolean) => {
-    setCustomSchedules(prev => prev.map(schedule => {
+    setActivePlanning(prev => prev.map(schedule => {
       if (schedule.employeeId === employeeId) {
         const updatedSchedule = { ...schedule };
         (updatedSchedule[day as keyof WeeklySchedule] as any)[field] = value;
