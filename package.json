@@ -16,9 +16,16 @@
     "stop": "node scripts/stop-all.cjs",
     "quick": "node scripts/quick-start.cjs",
     "shutdown": "node scripts/shutdown.cjs",
-    "close": "node scripts/shutdown.cjs"
+    "close": "node scripts/shutdown.cjs",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "npm run -w backend build",
+    "build:frontend": "npm run -w frontend build",
+    "deploy:start": "concurrently \"npm run deploy:backend\" \"npm run deploy:frontend\"",
+    "deploy:backend": "cd backend && npm start",
+    "deploy:frontend": "cd frontend && npm run build && npm start"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "detect-port": "^1.6.1"
   },
   "engines": {
