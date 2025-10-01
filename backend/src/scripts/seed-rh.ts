@@ -36,7 +36,7 @@ async function seedRH() {
         schedules: {
           create: [
             // Haute saison - tous les jours
-            { season: 'HAUTE', dayOfWeek: 0, openTime: '07:00', closeTime: '23:00' },
+            { season: 'HAUTE' as any, dayOfWeek: 0, openTime: '07:00', closeTime: '23:00' },
             { season: Season.HAUTE, dayOfWeek: 1, openTime: '07:00', closeTime: '23:00' },
             { season: Season.HAUTE, dayOfWeek: 2, openTime: '07:00', closeTime: '23:00' },
             { season: Season.HAUTE, dayOfWeek: 3, openTime: '07:00', closeTime: '23:00' },
@@ -44,7 +44,7 @@ async function seedRH() {
             { season: Season.HAUTE, dayOfWeek: 5, openTime: '07:00', closeTime: '23:00' },
             { season: Season.HAUTE, dayOfWeek: 6, openTime: '07:00', closeTime: '23:00' },
             // Basse saison - tous les jours
-            { season: 'BASSE', dayOfWeek: 0, openTime: '07:00', closeTime: '22:00' },
+            { season: 'BASSE' as any, dayOfWeek: 0, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 1, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 2, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 3, openTime: '07:00', closeTime: '22:00' },
@@ -71,7 +71,7 @@ async function seedRH() {
             { season: Season.HAUTE, dayOfWeek: 5, openTime: '07:00', closeTime: '22:30' },
             { season: Season.HAUTE, dayOfWeek: 6, openTime: '07:00', closeTime: '22:30' },
             // Basse saison - fermé lundi
-            { season: 'BASSE', dayOfWeek: 0, openTime: '07:00', closeTime: '22:00' },
+            { season: 'BASSE' as any, dayOfWeek: 0, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 1, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 2, openTime: '07:00', closeTime: '22:00' },
             { season: Season.BASSE, dayOfWeek: 3, openTime: '07:00', closeTime: '22:00' },

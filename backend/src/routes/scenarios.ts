@@ -1,18 +1,18 @@
-const { Router } = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { requireAuth } = require('./auth');
+import { Router, Request, Response, NextFunction } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requireAuth } from './auth';
 
 const prisma = new PrismaClient();
 const scenariosRouter = Router();
 
-scenariosRouter.get('/', requireAuth, async (_req, res, next) => {
+scenariosRouter.get('/', requireAuth, async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const scenarios = await prisma.scenario.findMany();
     res.json(scenarios);
   } catch (e) { next(e); }
 });
 
-scenariosRouter.post('/', requireAuth, async (req, res, next) => {
+scenariosRouter.post('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, horizonYears = 5, isActive = false } = req.body || {};
     const scenario = await prisma.scenario.create({ data: { name, horizonYears, isActive } });
@@ -20,7 +20,7 @@ scenariosRouter.post('/', requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-scenariosRouter.delete('/:id', requireAuth, async (req, res, next) => {
+scenariosRouter.delete('/:id', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     await prisma.scenario.delete({ where: { id } });
@@ -28,7 +28,7 @@ scenariosRouter.delete('/:id', requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-scenariosRouter.put('/:id/assumptions', requireAuth, async (req, res, next) => {
+scenariosRouter.put('/:id/assumptions', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const { revenues = [], charges = [], payroll = [], openings = [] } = req.body || {};
@@ -40,10 +40,10 @@ scenariosRouter.put('/:id/assumptions', requireAuth, async (req, res, next) => {
     ]);
 
     if (revenues.length) {
-      await prisma.revenueAssumption.createMany({ data: revenues.map((r) => ({ ...r, scenarioId: id })) });
+      await prisma.revenueAssumption.createMany({ data: revenues.map((r: any) => ({ ...r, scenarioId: id })) });
     }
     if (charges.length) {
-      await prisma.chargeAssumption.createMany({ data: charges.map((c) => ({ ...c, scenarioId: id })) });
+      await prisma.chargeAssumption.createMany({ data: charges.map((c: any) => ({ ...c, scenarioId: id })) });
     }
 
     // payroll & openings stockés dans leurs tables dédiées si fourni (non strictement lié à scenario)
@@ -58,6 +58,6 @@ scenariosRouter.put('/:id/assumptions', requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-module.exports = { scenariosRouter };
+export { scenariosRouter };
 
 
