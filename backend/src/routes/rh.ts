@@ -10,6 +10,62 @@ rhRouter.get('/test', (req: any, res: any) => {
   res.json({ message: 'API RH fonctionne !', timestamp: new Date().toISOString() });
 });
 
+// Route pour créer des données de test
+rhRouter.post('/seed-test-data', async (req: any, res: any) => {
+  try {
+    // Créer un service de test
+    const service = await prisma.service.create({
+      data: {
+        name: 'Test Service',
+        type: 'RESTAURATION',
+        color: '#ff0000',
+        isActive: true
+      }
+    });
+
+    // Créer une grille salariale
+    const salaryGrid = await prisma.salaryGrid.create({
+      data: {
+        level: 1,
+        echelon: 1,
+        hourlyRate: 15.0,
+        daysOff: 0,
+        vacationDays: 25
+      }
+    });
+
+    // Créer un employé de test
+    const employee = await prisma.employee.create({
+      data: {
+        firstName: 'Test',
+        lastName: 'User',
+        fullName: 'Test User',
+        contractType: 'CDI',
+        weeklyHours: 'H35',
+        isActive: true,
+        mainServiceId: service.id,
+        salaryGridId: salaryGrid.id,
+        compensationMode: 'HOURLY',
+        grossHourlyRate: 15.0,
+        employerChargeRateFactor: 1.25
+      }
+    });
+
+    res.json({ 
+      message: 'Données de test créées',
+      service,
+      salaryGrid, 
+      employee
+    });
+  } catch (e) {
+    console.error('Erreur création données test:', e);
+    res.status(500).json({ 
+      error: 'Seed error', 
+      message: e.message 
+    });
+  }
+});
+
 // === GESTION EMPLOYÉS ===
 
 // GET /api/v1/rh/employees - Liste des employés avec filtres
