@@ -12,16 +12,35 @@ app.use(express.json());
 // Connexion PostgreSQL
 const pgConfig = {
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('ssl') ? 
-    { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_URL?.includes('onrender') || 
+       process.env.DATABASE_URL?.includes('neon') ||
+       process.env.DATABASE_URL?.includes('supabase') ?
+       { rejectUnauthorized: false } : false
 };
 
 console.log('📍 Config PostgreSQL:', {
-  host: pgConfig.connectionString?.split('@')[1]?.split(':')[0],
-  ssl: !!pgConfig.ssl
+  host: pgConfig.connectionString?.split('@')[1]?.split(':')[0] || 'Unknown',
+  ssl: !!pgConfig.ssl,
+  url: process.env.DATABASE_URL ? '[PRESENT]' : '[MISSING]'
 });
 
-const pool = new Pool(pgConfig);
+const pool = new Pool({
+  ...pgConfig,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000
+});
+
+// Test de connexion PostgreSQL au démarrage
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('❌ Erreur connexion PostgreSQL:', err.message);
+    console.error('❌ Error code:', err.code);
+    return;
+  }
+  console.log('✅ PostgreSQL connecté:', client.database);
+  release();
+});
 
 // Health check
 app.get('/', (req, res) => {
@@ -30,6 +49,30 @@ app.get('/', (req, res) => {
 
 app.get('/healthz', (req, res) => {
   res.json({ ok: true });
+});
+
+// Debug endpoint pour test connexion PostgreSQL
+app.get('/debug', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    console.log('🔍 Test connexion DB...');
+    const result = await client.query('SELECT NOW() as timestamp, current_database() as db');
+    client.release();
+    
+    res.json({
+      success: true,
+      timestamp: result.rows[0].timestamp,
+      database: result.rows[0].db,
+      message: 'Connexion PostgreSQL OK'
+    });
+  } catch (error) {
+    console.error('❌ Debug error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: error.code
+    });
+  }
 });
 
 // ENDPOINTS SERVICES EXACTS
@@ -252,8 +295,26 @@ app.delete('/api/v1/rh/employees/:id', async (req, res) => {
   }
 });
 
-// Démarrage serveur
+// Error handler global
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('❌ Erreur globale:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message,
+    code: err.code
+  });
+});
+
+// Démarrage serveur avec gestion d'erreur
 const port = Number(process.env.PORT || 3000);
 app.listen(port, '0.0.0.0', () => {
-  console.log(`🚀 HOTALY-PREV API démarrée sur port ${port}`);
+  console.log(`🚀 HOTALY-PREV PostgreSQL API démarrée sur port ${port}`);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Erreur non capturée:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Promise rejetée:', reason);
 });
