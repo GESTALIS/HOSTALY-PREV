@@ -93,7 +93,7 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
         isActive: serviceToEdit.isActive,
         seasonalityMode: 'DUAL'
       });
-      setSchedules(serviceToEdit.schedules);
+      setSchedules(serviceToEdit.schedules as any);
     } else {
       // Horaires par défaut pour un nouveau service - Basse et Haute saison
       const defaultSchedules: Array<{
@@ -335,7 +335,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
                     {colors.map((color) => (
                       <button
                         key={color}
-                        type="button"
                         onClick={() => setFormData(prev => ({ ...prev, color }))}
                         className={`w-8 h-8 rounded-full border-2 ${
                           formData.color === color ? 'border-gray-800' : 'border-gray-300'
@@ -384,7 +383,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
                   {formData.seasonalityMode === 'DUAL' && (
                     <div className="flex space-x-2">
                       <Button
-                        type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => copyWeekSchedule('BASSE', 'HAUTE')}
@@ -392,7 +390,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
                         Copier Basse → Haute
                       </Button>
                       <Button
-                        type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => copyWeekSchedule('HAUTE', 'BASSE')}
@@ -410,7 +407,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
                         <h4 className="font-medium text-gray-900">{day.name}</h4>
                         <div className="flex space-x-2">
                           <Button
-                            type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => copyDaySchedule(1, day.id, 'BASSE')}
@@ -575,7 +571,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
             {/* Footer */}
             <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 mt-8">
               <Button
-                type="button"
                 variant="outline"
                 onClick={handleClose}
                 disabled={isSubmitting}
@@ -583,7 +578,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
                 Annuler
               </Button>
               <Button
-                type="submit"
                 variant="primary"
                 loading={isSubmitting}
                 disabled={isSubmitting}

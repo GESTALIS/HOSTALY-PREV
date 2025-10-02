@@ -24,7 +24,7 @@ const FlexibilityAlerts: React.FC<FlexibilityAlertsProps> = ({
 }) => {
   
   const getAlerts = () => {
-    const alerts = [];
+    const alerts: any[] = [];
 
     employees.forEach(employee => {
       const currentHours = currentWeekHours[employee.id] || 0;

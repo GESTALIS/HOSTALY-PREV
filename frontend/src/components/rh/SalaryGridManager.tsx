@@ -229,10 +229,10 @@ const SalaryGridManager: React.FC<SalaryGridManagerProps> = ({ onGridsChange }) 
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
-              <Button type="button" variant="outline" onClick={resetForm}>
+              <Button variant="outline" onClick={resetForm}>
                 Annuler
               </Button>
-              <Button type="submit" variant="primary">
+              <Button variant="primary">
                 {editingGrid ? 'Mettre à jour' : 'Créer'}
               </Button>
             </div>

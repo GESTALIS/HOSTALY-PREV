@@ -8,7 +8,7 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     // eslint-disable-next-line no-param-reassign
-    config.headers = { ...config.headers, Authorization: `Bearer ${token}` };
+    config.headers = { ...config.headers, Authorization: `Bearer ${token}` } as any;
   }
   return config;
 });
