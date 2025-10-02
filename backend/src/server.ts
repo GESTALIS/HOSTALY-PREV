@@ -11,6 +11,18 @@ const { router: apiRouter } = require('./routes/api_v1');
 // Migration automatique désactivée pour éviter les SIGTERM
 // Utiliser script séparé pour les migrations si nécessaire
 
+// Gestion des erreurs non capturées
+process.on('unhandledRejection', (err) => {
+  console.error('[unhandledRejection]', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+process.on('SIGTERM', () => {
+  console.log('[signal] SIGTERM reçu, arrêt propre...');
+  process.exit(0);
+});
+
 const app = express();
 
 // Security
@@ -39,6 +51,11 @@ app.use(
   })
 );
 
+// Health check endpoint (critique pour Render)
+app.get('/healthz', (req: any, res: any) => {
+  res.status(200).send('ok');
+});
+
 // Routes
 app.use('/api/v1', apiRouter);
 
@@ -59,8 +76,8 @@ const port = Number(process.env.PORT || 3002);
 
 // Démarrer le serveur
 function startServer() {
-  app.listen(port, () => {
-    console.log(`API démarrée sur http://localhost:${port}`);
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`[server] listening on http://0.0.0.0:${port}`);
   });
 }
 
