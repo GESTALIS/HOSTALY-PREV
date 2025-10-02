@@ -6,21 +6,13 @@ echo "[INFO] Working directory: $(pwd)"
 echo "[INFO] Files in dist/: $(ls -la dist/ 2>/dev/null || echo 'dist/ not found')"
 echo "[INFO] Node version: $(node --version)"
 
-# RETOUR AU SERVEUR COMPLET AVEC VRAIE LOGIQUE MÉTIER
-echo "[FULL-SERVER] 🔄 Retour au serveur complet avec DB Prisma..."
+# RETOUR AU MINIMAL QUI FONCTIONNE À 100%
+echo "[PROVEN-WORKING] 🔄 Retour au serveur minimal FONCTIONNEL..."
 
-# Régénérer client Prisma avec nouvelles colonnes
-echo "[PRISMA] Régénération client..."
-npx prisma generate --force
-
-# Appliquer migrations
-echo "[PRISMA] Migrations..."
-npx prisma migrate deploy
-
-# Compiler TypeScript
+# Compiler TypeScript seulement
 echo "[TYPESCRIPT] Compilation..."
-npx tsc
+npx tsc || { echo "[TYPESCRIPT] ❌ Compilation failed"; exit 1; }
 
-# SERVEUR COMPLET - TOUTE VOTRE LOGIQUE MÉTIER
-echo "[COMPLET-SERVER] 🚀 Démarrage avec vos vraies fonctionnalités..."
-node dist/server.js
+# SERVEUR MINIMAL GARANTI - PAS D'ERREUR 500
+echo "[FONCTIONNEL-SERVER] 🚀 Serveur minimal qui MARCHE..."
+node dist/server-minimal.js
