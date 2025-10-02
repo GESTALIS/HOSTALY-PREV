@@ -74,11 +74,21 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 
 const port = Number(process.env.PORT || 3002);
 
+console.log(`[CONFIG] PORT=${port}`);
+console.log(`[CONFIG] NODE_ENV=${process.env.NODE_ENV}`);
+console.log(`[CONFIG] DATABASE_URL present=${!!process.env.DATABASE_URL}`);
+
 // Démarrer le serveur
 function startServer() {
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`[server] listening on http://0.0.0.0:${port}`);
-  });
+  try {
+    console.log(`[CONFIG] Starting server on 0.0.0.0:${port}`);
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`[SERVER] ✅ Successfully listening on http://0.0.0.0:${port}`);
+    });
+  } catch (err) {
+    console.error('[SERVER] ❌ Error starting server:', err);
+    process.exit(1);
+  }
 }
 
 startServer();

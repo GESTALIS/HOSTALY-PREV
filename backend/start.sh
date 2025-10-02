@@ -1,16 +1,26 @@
 #!/bin/sh
 
-# Script de démarrage pour Render avec migrations automatiques
-echo "[HOTALY-PREV] Démarrage du serveur"
+# Script de démarrage pour Render avec debugging
+echo "=== [HOTALY-PREV] Démarrage du serveur ==="
+echo "[INFO] Working directory: $(pwd)"
+echo "[INFO] Files in dist/: $(ls -la dist/ 2>/dev/null || echo 'dist/ not found')"
+echo "[INFO] Node version: $(node --version)"
 
-# Générer le client Prisma (toujours nécessaire)
+# Générer le client Prisma
 echo "[PRISMA] Génération du client..."
-npx prisma generate || { echo "❌ Échec génération Prisma"; exit 1; }
+npx prisma generate
 
-# Appliquer les migrations si nécessaire (idempotent)
+# Appliquer les migrations
 echo "[PRISMA] Application des migrations..."
-npx prisma migrate deploy || { echo "❌ Échec migrations Prisma"; exit 1; }
+npx prisma migrate deploy
 
-# Démarrer le serveur
-echo "[SERVER] Démarrage du serveur Node.js..."
-exec node dist/server.js
+# Vérifier dist/server.js existe
+if [ -f "dist/server.js" ]; then
+  echo "[SERVER] dist/server.js exists, starting..."
+  node dist/server.js
+else
+  echo "[ERROR] dist/server.js not found!"
+  echo "[INFO] Available files:"
+  ls -la
+  exit 1
+fi
