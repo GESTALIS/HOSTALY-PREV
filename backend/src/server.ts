@@ -105,29 +105,56 @@ app.get('/postgres-test', async (req: any, res: any) => {
   }
 });
 
-// Route temporaire pour appliquer les migrations manuelles Render  
-app.post('/fix-render-columns', async (req: any, res: any) => {
+// Route temporaire pour appliquer toutes les migrations manuelles Render  
+app.post('/fix-render-columns-all', async (req: any, res: any) => {
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
+    const { Client } = require('pg');
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
 
-    // Essayer d'abord un ALTER simple
-    await prisma.$executeRaw`ALTER TABLE "Employee" ADD COLUMN IF NOT EXISTS "fullName" TEXT DEFAULT ''`;
-    
-    await prisma.$disconnect();
+    await client.connect();
+
+    // Ajouter toutes les colonnes manquantes en une fois
+    await client.query(`
+      ALTER TABLE "Employee" 
+      ADD COLUMN IF NOT EXISTS "compensationMode" TEXT DEFAULT 'HOURLY',
+      ADD COLUMN IF NOT EXISTS "grossHourlyRate" DOUBLE PRECISION DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS "grossMonthlyBase" DOUBLE PRECISION DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS "employerChargeRateFactor" DOUBLE PRECISION DEFAULT 1.0,
+      ADD COLUMN IF NOT EXISTS "paidLeavePolicy" TEXT DEFAULT 'none',
+      ADD COLUMN IF NOT EXISTS "paidLeaveRatePct" DOUBLE PRECISION DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS "paidLeaveFixedAnnual" DOUBLE PRECISION DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS "serviceAllocation" JSONB DEFAULT '{}'
+    `);
+
+    // Remplir fullName si vide
+    await client.query(`
+      UPDATE "Employee" 
+      SET "fullName" = COALESCE("firstName" || ' ' || "lastName", '')
+      WHERE "fullName" = '' OR "fullName" IS NULL
+    `);
+
+    await client.end();
 
     res.json({
       success: true,
-      message: "Migration débutée - colonne fullName ajoutée"
+      message: "Toutes les colonnes ont été ajoutées avec succès !",
+      columnsAdded: [
+        "compensationMode", "grossHourlyRate", "grossMonthlyBase", 
+        "employerChargeRateFactor", "paidLeavePolicy", "paidLeaveRatePct",
+        "paidLeaveFixedAnnual", "serviceAllocation"
+      ]
     });
 
   } catch (error: any) {
-    console.error('[FIX-RENDER] Error:', error);
+    console.error('[FIX-RENDER-ALL] Error:', error);
     res.status(500).json({
       success: false,
       error: error.message,
       errorCode: error.code,
-      message: "Erreur lors de l'application de la migration Render"
+      message: "Erreur lors de l'application des migrations Render"
     });
   }
 });
