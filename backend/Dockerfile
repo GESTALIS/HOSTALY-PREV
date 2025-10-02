@@ -19,9 +19,6 @@ RUN npx prisma generate
 # Build l'application
 RUN npm run build
 
-# Nettoyer les dev dependencies
-RUN npm prune --production
-
 # Exposer le port
 EXPOSE 3002
 
