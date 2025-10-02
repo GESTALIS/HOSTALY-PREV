@@ -12,12 +12,30 @@ const { router: apiRouter } = require('./routes/api_v1');
 async function runMigrations() {
   try {
     console.log('🔧 Running database migrations...');
-    const { execSync } = require('child_process');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    console.log('✅ Database migrations completed');
+    const { spawn } = require('child_process');
+    
+    // Exécuter les migrations via spawn (plus stable)
+    const migrateProcess = spawn('npx', ['prisma', 'migrate', 'deploy'], {
+      cwd: '/app',
+      stdio: 'inherit',
+      env: process.env
+    });
+    
+    // Attendre la fin du processus
+    await new Promise((resolve, reject) => {
+      migrateProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log('✅ Database migrations completed');
+          resolve(true);
+        } else {
+          reject(new Error(`Migration process exited with code ${code}`));
+        }
+      });
+      migrateProcess.on('error', reject);
+    });
   } catch (error) {
     console.error('❌ Migration failed:', error);
-    process.exit(1);
+    console.log('⏭️ Continuing without migrations (tables may not exist)');
   }
 }
 
