@@ -69,7 +69,13 @@ rhRouter.get('/employees', async (req: any, res: any, next: any) => {
     });
 
     res.json(employees);
-  } catch (e) { next(e); }
+  } catch (e) { 
+    console.error('Erreur employees endpoint:', e);
+    res.status(500).json({ 
+      error: 'Database error', 
+      message: e.message || 'Unknown error' 
+    });
+  }
 });
 
 // POST /api/v1/rh/employees - Créer un employé
