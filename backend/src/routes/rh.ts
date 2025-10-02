@@ -842,3 +842,6 @@ rhRouter.get('/salary-grid', async (req: any, res: any, next: any) => {
 });
 
 module.exports = rhRouter;
+
+// Traiter ce fichier comme un module
+export {};

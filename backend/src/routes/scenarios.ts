@@ -60,4 +60,7 @@ scenariosRouter.put('/:id/assumptions', requireAuth, async (req: any, res: any, 
 
 module.exports = { scenariosRouter };
 
+// Traiter ce fichier comme un module
+export {};
+
 

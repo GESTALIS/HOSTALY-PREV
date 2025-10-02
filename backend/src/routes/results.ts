@@ -12,4 +12,7 @@ resultsRouter.get('/:id', requireAuth, (req: any, res: any) => {
 
 module.exports = { resultsRouter };
 
+// Traiter ce fichier comme un module
+export {};
+
 

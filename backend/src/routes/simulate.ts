@@ -9,4 +9,7 @@ simulateRouter.post('/:id', requireAuth, (req: any, res: any) => {
 
 module.exports = { simulateRouter };
 
+// Traiter ce fichier comme un module
+export {};
+
 

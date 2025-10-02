@@ -8,4 +8,7 @@ healthRouter.get('/', (req: any, res: any) => {
 
 module.exports = { healthRouter };
 
+// Traiter ce fichier comme un module
+export {};
+
 

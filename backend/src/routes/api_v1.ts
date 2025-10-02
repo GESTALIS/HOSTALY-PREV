@@ -19,4 +19,7 @@ router.use('/rh', rhRouter);
 
 module.exports = { router };
 
+// Traiter ce fichier comme un module
+export {};
+
 

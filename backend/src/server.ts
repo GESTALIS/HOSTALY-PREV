@@ -57,4 +57,7 @@ app.listen(port, () => {
   console.log(`API démarrée sur http://localhost:${port}`);
 });
 
+// Traiter ce fichier comme un module
+export {};
+
 

@@ -14,4 +14,7 @@ calendarRouter.get('/zone-a', requireAuth, async (_req: any, res: any, next: any
 
 module.exports = { calendarRouter };
 
+// Traiter ce fichier comme un module
+export {};
+
 

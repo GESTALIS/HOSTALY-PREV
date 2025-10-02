@@ -36,4 +36,7 @@ function requireAuth(req: any, res: any, next: any) {
 
 module.exports = { authRouter, requireAuth };
 
+// Traiter ce fichier comme un module
+export {};
+
 
