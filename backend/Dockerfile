@@ -6,7 +6,7 @@ WORKDIR /app
 COPY . .
 
 # Installer les dépendances
-RUN npm ci
+RUN npm install
 
 # Générer Prisma client
 RUN npx prisma generate
