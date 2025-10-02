@@ -8,6 +8,19 @@ const pinoHttp = require('pino-http');
 const { v4: uuidv4 } = require('uuid');
 const { router: apiRouter } = require('./routes/api_v1');
 
+// Lancer les migrations automatiquement au démarrage
+async function runMigrations() {
+  try {
+    console.log('🔧 Running database migrations...');
+    const { execSync } = require('child_process');
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    console.log('✅ Database migrations completed');
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    process.exit(1);
+  }
+}
+
 const app = express();
 
 // Security
@@ -53,8 +66,18 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 });
 
 const port = Number(process.env.PORT || 3002);
-app.listen(port, () => {
-  console.log(`API démarrée sur http://localhost:${port}`);
+
+// Démarrer le serveur avec les migrations
+async function startServer() {
+  await runMigrations();
+  app.listen(port, () => {
+    console.log(`API démarrée sur http://localhost:${port}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error('❌ Failed to start server:', error);
+  process.exit(1);
 });
 
 // Traiter ce fichier comme un module
