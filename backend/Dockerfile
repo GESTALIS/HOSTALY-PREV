@@ -3,7 +3,8 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Installer OpenSSL et autres dépendances nécessaires
-RUN apk add --no-cache openssl1.1-libs
+RUN apk add --no-cache openssl && \
+    ln -s /usr/lib/libssl.so.3 /lib/libssl.so.1.1
 
 # Copier tous les fichiers
 COPY . .
