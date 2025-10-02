@@ -56,56 +56,56 @@ app.get('/healthz', (req: any, res: any) => {
   res.status(200).send('ok');
 });
 
-// Route temporaire pour appliquer les migrations manuelles Render
-app.post('/fix-render-columns', async (req: any, res: any) => {
+// Route de diagnostic Prisma simple
+app.get('/prisma-test', async (req: any, res: any) => {
   try {
     const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL
-        }
-      }
-    });
+    const prisma = new PrismaClient();
 
-    // Exécuter la migration SQL directement
-    await prisma.$executeRaw`
-      ALTER TABLE "Employee" 
-      ADD COLUMN IF NOT EXISTS "fullName" TEXT DEFAULT '',
-      ADD COLUMN IF NOT EXISTS "compensationMode" TEXT DEFAULT 'HOURLY',
-      ADD COLUMN IF NOT EXISTS "grossHourlyRate" DOUBLE PRECISION DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS "grossMonthlyBase" DOUBLE PRECISION DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS "employerChargeRateFactor" DOUBLE PRECISION DEFAULT 1.0,
-      ADD COLUMN IF NOT EXISTS "paidLeavePolicy" TEXT DEFAULT 'none',
-      ADD COLUMN IF NOT EXISTS "paidLeaveRatePct" DOUBLE PRECISION DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS "paidLeaveFixedAnnual" DOUBLE PRECISION DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS "serviceAllocation" JSONB DEFAULT '{}';
-
-      UPDATE "Employee" 
-      SET 
-        "fullName" = COALESCE("firstName" || ' ' || "lastName", ''),
-        "compensationMode" = COALESCE("compensationMode", 'HOURLY'),
-        "grossHourlyRate" = COALESCE("grossHourlyRate", 0),
-        "grossMonthlyBase" = COALESCE("grossMonthlyBase", 0),
-        "employerChargeRateFactor" = COALESCE("employerChargeRateFactor", 1.0),
-        "paidLeavePolicy" = COALESCE("paidLeavePolicy", 'none'),
-        "paidLeaveRatePct" = COALESCE("paidLeaveRatePct", 0),
-        "paidLeaveFixedAnnual" = COALESCE("paidLeaveFixedAnnual", 0),
-        "serviceAllocation" = COALESCE("serviceAllocation", '{}')
-      WHERE "fullName" = '' OR "fullName" IS NULL
-    `;
-
+    // Test de connexion simple
+    await prisma.$connect();
+    
+    // Comptage des tables (sans colonnes spécifiques)
+    const employeeCount = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "Employee"`;
+    const serviceCount = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "Service"`;
+    
     await prisma.$disconnect();
 
     res.json({
       success: true,
-      message: "Migration Render appliquée avec succès",
-      columnsAdded: [
-        "fullName", "compensationMode", "grossHourlyRate", 
-        "grossMonthlyBase", "employerChargeRateFactor",
-        "paidLeavePolicy", "paidLeaveRatePct", 
-        "paidLeaveFixedAnnual", "serviceAllocation"
-      ]
+      message: "Connexion Prisma OK",
+      database: {
+        employees: employeeCount,
+        services: serviceCount,
+        connectionStatus: "OK"
+      }
+    });
+
+  } catch (error: any) {
+    console.error('[PRISMA-TEST] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      errorCode: error.code,
+      message: "Erreur Prisma détaillée"
+    });
+  }
+});
+
+// Route temporaire pour appliquer les migrations manuelles Render  
+app.post('/fix-render-columns', async (req: any, res: any) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+
+    // Essayer d'abord un ALTER simple
+    await prisma.$executeRaw`ALTER TABLE "Employee" ADD COLUMN IF NOT EXISTS "fullName" TEXT DEFAULT ''`;
+    
+    await prisma.$disconnect();
+
+    res.json({
+      success: true,
+      message: "Migration débutée - colonne fullName ajoutée"
     });
 
   } catch (error: any) {
@@ -113,6 +113,7 @@ app.post('/fix-render-columns', async (req: any, res: any) => {
     res.status(500).json({
       success: false,
       error: error.message,
+      errorCode: error.code,
       message: "Erreur lors de l'application de la migration Render"
     });
   }
