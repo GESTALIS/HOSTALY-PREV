@@ -17,16 +17,11 @@ rhSimpleRouter.get('/employees-basic', async (req: any, res: any) => {
         contractType: true,
         weeklyHours: true,
         isActive: true,
-        fullName: true,
-        compensationMode: true,
-        grossHourlyRate: true,
-        grossMonthlyBase: true,
-        employerChargeRateFactor: true,
-        paidLeavePolicy: true,
-        paidLeaveRatePct: true,
-        paidLeaveFixedAnnual: true,
-        serviceAllocation: true
-        // Pas de relations pour éviter les erreurs
+        mainServiceId: true,
+        salaryGridId: true,
+        createdAt: true,
+        updatedAt: true
+        // Colonnes sûres seulement après régénération du client
       }
     });
 
