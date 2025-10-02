@@ -11,7 +11,8 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:seed": "ts-node src/scripts/seed.ts",
     "seed": "ts-node ./prisma/seed.ts",
-    "seed:rh": "ts-node src/scripts/seed-rh.ts"
+    "seed:rh": "ts-node src/scripts/seed-rh.ts",
+    "pg-fix": "node scripts/pg-fix.mjs"
   },
   "dependencies": {
     "@prisma/client": "5.16.1",
