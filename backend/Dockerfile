@@ -25,5 +25,9 @@ RUN npm prune --production
 # Exposer le port
 EXPOSE 3002
 
+# Script de démarrage avec migrations
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 # Commande de démarrage
-CMD ["npm", "start"]
+CMD ["/start.sh"]
