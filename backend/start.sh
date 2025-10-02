@@ -6,21 +6,17 @@ echo "[INFO] Working directory: $(pwd)"
 echo "[INFO] Files in dist/: $(ls -la dist/ 2>/dev/null || echo 'dist/ not found')"
 echo "[INFO] Node version: $(node --version)"
 
-# ÉTAPE 1: RÉPARER LES DATA CORE FIRST
-echo "[REPAIR-DATA] 🔧 Correction des données serveur complet..."
+# SERVEUR POSTGRESQL RÉEL - CRUD complet avec mes endpoints
+echo "[REAL-POSTGRESQL] 🔧 Installation schéma + démarrage PostgreSQL direct..."
 
-# Régénérer client Prisma avec nouvelles colonnes
-echo "[PRISMA] Génération client..."
-npx prisma generate --force
-
-# Appliquer migrations manuelles PostgreSQL direct
-echo "[PG-FIX] Correction directe DB..."
-npm run pg-fix
-
-# Compiler
+# Compiler TypeScript
 echo "[TYPESCRIPT] Compilation..."
 npx tsc
 
-# SERVEUR COMPLET - VOS VRAIES FONCTIONNALITÉS RH
-echo "[REAL-SERVER] 🚀 Démarrage avec vraies APIs RH..."
-node dist/server.js
+# Initialiser les tables PostgreSQL minimales
+echo "[DB-INIT] Initialisation schéma PostgreSQL..."
+npm run db:init
+
+# SERVEUR POSTGRESQL RÉEL - APIs CRUD fonctionnelles
+echo "[POSTGRESQL-SERVER] 🚀 Serveur réel PostgreSQL avec mes endpoints..."
+node dist/server.pg.js

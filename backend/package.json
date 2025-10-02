@@ -12,7 +12,9 @@
     "prisma:seed": "ts-node src/scripts/seed.ts",
     "seed": "ts-node ./prisma/seed.ts",
     "seed:rh": "ts-node src/scripts/seed-rh.ts",
-    "pg-fix": "node scripts/pg-fix.mjs"
+    "pg-fix": "node scripts/pg-fix.mjs",
+    "db:init": "ts-node src/scripts/db.init.ts",
+    "start:pg": "npx tsc && npm run db:init && node dist/server.pg.js"
   },
   "dependencies": {
     "@prisma/client": "5.16.1",
