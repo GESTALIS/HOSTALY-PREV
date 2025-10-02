@@ -8,35 +8,35 @@ const pinoHttp = require('pino-http');
 const { v4: uuidv4 } = require('uuid');
 const { router: apiRouter } = require('./routes/api_v1');
 
-// Lancer les migrations automatiquement au démarrage
-async function runMigrations() {
-  try {
-    console.log('🔧 Running database migrations...');
-    const { spawn } = require('child_process');
-    
-    // Exécuter les migrations via spawn (plus stable)
-    const migrateProcess = spawn('npx', ['prisma', 'migrate', 'deploy'], {
-      cwd: '/app',
-      stdio: 'inherit',
-      env: process.env
-    });
-    
-    // Attendre la fin du processus
-    await new Promise((resolve, reject) => {
+// Lancer les migrations en arrière-plan après le démarrage
+async function runMigrationsInBackground() {
+  setTimeout(async () => {
+    try {
+      console.log('🔧 Running database migrations in background...');
+      const { spawn } = require('child_process');
+      
+      // Exécuter les migrations via spawn (non-bloquant)
+      const migrateProcess = spawn('npx', ['prisma', 'migrate', 'deploy'], {
+        cwd: '/app',
+        stdio: 'inherit',
+        env: process.env
+      });
+      
       migrateProcess.on('close', (code) => {
         if (code === 0) {
           console.log('✅ Database migrations completed');
-          resolve(true);
         } else {
-          reject(new Error(`Migration process exited with code ${code}`));
+          console.log('❌ Migrations failed but server continues running');
         }
       });
-      migrateProcess.on('error', reject);
-    });
-  } catch (error) {
-    console.error('❌ Migration failed:', error);
-    console.log('⏭️ Continuing without migrations (tables may not exist)');
-  }
+      
+      migrateProcess.on('error', (error) => {
+        console.log('❌ Migration process error:', error.message);
+      });
+    } catch (error) {
+      console.log('❌ Migration failed:', error.message);
+    }
+  }, 2000); // Attendre 2 secondes
 }
 
 const app = express();
@@ -85,18 +85,16 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 
 const port = Number(process.env.PORT || 3002);
 
-// Démarrer le serveur avec les migrations
-async function startServer() {
-  await runMigrations();
+// Démarrer le serveur
+function startServer() {
   app.listen(port, () => {
     console.log(`API démarrée sur http://localhost:${port}`);
+    // Lancer les migrations en arrière-plan après le démarrage
+    runMigrationsInBackground();
   });
 }
 
-startServer().catch((error) => {
-  console.error('❌ Failed to start server:', error);
-  process.exit(1);
-});
+startServer();
 
 // Traiter ce fichier comme un module
 export {};
