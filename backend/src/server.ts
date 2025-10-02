@@ -8,36 +8,8 @@ const pinoHttp = require('pino-http');
 const { v4: uuidv4 } = require('uuid');
 const { router: apiRouter } = require('./routes/api_v1');
 
-// Lancer les migrations en arrière-plan après le démarrage
-async function runMigrationsInBackground() {
-  setTimeout(async () => {
-    try {
-      console.log('🔧 Running database migrations in background...');
-      const { spawn } = require('child_process');
-      
-      // Exécuter les migrations via spawn (non-bloquant)
-      const migrateProcess = spawn('npx', ['prisma', 'migrate', 'deploy'], {
-        cwd: '/app',
-        stdio: 'inherit',
-        env: process.env
-      });
-      
-      migrateProcess.on('close', (code) => {
-        if (code === 0) {
-          console.log('✅ Database migrations completed');
-        } else {
-          console.log('❌ Migrations failed but server continues running');
-        }
-      });
-      
-      migrateProcess.on('error', (error) => {
-        console.log('❌ Migration process error:', error.message);
-      });
-    } catch (error) {
-      console.log('❌ Migration failed:', error.message);
-    }
-  }, 2000); // Attendre 2 secondes
-}
+// Migration automatique désactivée pour éviter les SIGTERM
+// Utiliser script séparé pour les migrations si nécessaire
 
 const app = express();
 
@@ -89,8 +61,6 @@ const port = Number(process.env.PORT || 3002);
 function startServer() {
   app.listen(port, () => {
     console.log(`API démarrée sur http://localhost:${port}`);
-    // Lancer les migrations en arrière-plan après le démarrage
-    runMigrationsInBackground();
   });
 }
 
