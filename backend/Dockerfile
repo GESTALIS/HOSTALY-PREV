@@ -1,10 +1,11 @@
-FROM node:18-alpine
+FROM node:18-bookworm-slim
 
 WORKDIR /app
 
-# Installer OpenSSL et autres dépendances nécessaires
-RUN apk add --no-cache openssl && \
-    ln -s /usr/lib/libssl.so.3 /lib/libssl.so.1.1
+# Installer les dépendances système nécessaires
+RUN apt-get update && apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copier tous les fichiers
 COPY . .
