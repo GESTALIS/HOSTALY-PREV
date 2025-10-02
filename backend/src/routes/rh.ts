@@ -65,15 +65,11 @@ rhRouter.post('/seed-test-data', async (req: any, res: any) => {
       data: {
         firstName: 'Test',
         lastName: 'User',
-        fullName: 'Test User',
         contractType: 'CDI',
         weeklyHours: 'H35',
         isActive: true,
         mainServiceId: service.id,
-        salaryGridId: salaryGrid.id,
-        compensationMode: 'HOURLY',
-        grossHourlyRate: 15.0,
-        employerChargeRateFactor: 1.25
+        salaryGridId: salaryGrid.id
       }
     });
 
