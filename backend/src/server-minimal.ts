@@ -47,6 +47,24 @@ app.get('/api/v1/services', (req: any, res: any) => {
   ]);
 });
 
+// Route manquante que votre frontend cherche
+app.get('/api/v1/rh/services', (req: any, res: any) => {
+  res.json([
+    { id: 1, name: "Housekeeping", color: "#ff0000", type: "RESTAURATION" },
+    { id: 2, name: "Réception", color: "#0000ff", type: "ACCUEIL" },
+    { id: 3, name: "Room Service", color: "#00ff00", type: "RESTAURATION" }
+  ]);
+});
+
+// Route salary-grid manquante
+app.get('/api/v1/rh/salary-grid', (req: any, res: any) => {
+  res.json([
+    { id: 1, level: "N1", echelon: "1", hourlyRate: 12.5 },
+    { id: 2, level: "N2", echelon: "2", hourlyRate: 14.0 },
+    { id: 3, level: "N3", echelon: "3", hourlyRate: 16.5 }
+  ]);
+});
+
 // Données de test pour démo
 app.post('/api/v1/rh/employees', (req: any, res: any) => {
   res.json({
