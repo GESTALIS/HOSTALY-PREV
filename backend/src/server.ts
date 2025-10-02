@@ -56,38 +56,51 @@ app.get('/healthz', (req: any, res: any) => {
   res.status(200).send('ok');
 });
 
-// Route de diagnostic Prisma simple
-app.get('/prisma-test', async (req: any, res: any) => {
+// Route de diagnostic PostgreSQL direct (sans Prisma)
+app.get('/postgres-test', async (req: any, res: any) => {
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
+    // Utiliser PostgreSQL direct sans Prisma pour le debug
+    const { Client } = require('pg');
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
 
-    // Test de connexion simple
-    await prisma.$connect();
-    
-    // Comptage des tables (sans colonnes spécifiques)
-    const employeeCount = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "Employee"`;
-    const serviceCount = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "Service"`;
-    
-    await prisma.$disconnect();
+    await client.connect();
+    console.log('[POSTGRES-TEST] Connexion réussie');
+
+    // Tester la structure des tables
+    const tableInfo = await client.query(`
+      SELECT 
+        table_name,
+        column_name,
+        data_type,
+        is_nullable
+      FROM information_schema.columns 
+      WHERE table_name = 'Employee' 
+      ORDER BY ordinal_position
+    `);
+
+    await client.end();
 
     res.json({
       success: true,
-      message: "Connexion Prisma OK",
+      message: "Connexion PostgreSQL OK",
       database: {
-        employees: employeeCount,
-        services: serviceCount,
-        connectionStatus: "OK"
+        employeeColumns: tableInfo.rows,
+        connectionStatus: "OK",
+        databaseUrl: process.env.DATABASE_URL ? 'Present' : 'Missing'
       }
     });
 
   } catch (error: any) {
-    console.error('[PRISMA-TEST] Error:', error);
+    console.error('[POSTGRES-TEST] Error:', error);
     res.status(500).json({
       success: false,
       error: error.message,
       errorCode: error.code,
-      message: "Erreur Prisma détaillée"
+      stack: error.stack,
+      message: "Erreur PostgreSQL détaillée"
     });
   }
 });
