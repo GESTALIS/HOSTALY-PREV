@@ -14,6 +14,6 @@ npx prisma generate || echo "[PRISMA] ⚠️ Generate failed - continuing anyway
 echo "[PRISMA] Application des migrations..."
 npx prisma migrate deploy || echo "[PRISMA] ⚠️ Migrate failed - continuing anyway"
 
-# TEST EXPRESS-SANS-PRISMA - Version intermédiaire
-echo "[EXPRESS-TEST] Démarrage serveur Express sans Prisma..."
-npx tsc && node dist/server-express-no-prisma.js
+# SERVEUR COMPLET AVEC ROUTES RH ET PRISMA
+echo "[FULL-SERVER] Démarrage du serveur complet HOTALY-PREV..."
+npx tsc && node dist/server.js
