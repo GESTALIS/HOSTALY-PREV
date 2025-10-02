@@ -10,6 +10,33 @@ rhRouter.get('/test', (req: any, res: any) => {
   res.json({ message: 'API RH fonctionne !', timestamp: new Date().toISOString() });
 });
 
+// Route pour créer les tables (migration)
+rhRouter.post('/create-tables', async (req: any, res: any) => {
+  try {
+    const { execSync } = require('child_process');
+    
+    // D'abord générer le client Prisma
+    execSync('npx prisma generate', { 
+      cwd: '/app',
+      stdio: 'pipe' 
+    });
+    
+    // Ensuite déployer les migrations
+    execSync('npx prisma migrate deploy', { 
+      cwd: '/app',
+      stdio: 'pipe' 
+    });
+    
+    res.json({ message: 'Tables créées avec succès' });
+  } catch (e) {
+    console.error('Erreur création tables:', e);
+    res.status(500).json({ 
+      error: 'Migration error', 
+      message: e.message 
+    });
+  }
+});
+
 // Route pour créer des données de test
 rhRouter.post('/seed-test-data', async (req: any, res: any) => {
   try {
