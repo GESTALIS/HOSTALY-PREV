@@ -5,6 +5,7 @@ const { scenariosRouter } = require('./scenarios');
 const { calendarRouter } = require('./calendar');
 const { resultsRouter } = require('./results');
 const { simulateRouter } = require('./simulate');
+const { testRouter } = require('./test-rh-debug');
 const rhRouter = require('./rh');
 
 const router = Router();
@@ -15,6 +16,7 @@ router.use('/scenarios', scenariosRouter);
 router.use('/calendar', calendarRouter);
 router.use('/results', resultsRouter);
 router.use('/simulate', simulateRouter);
+router.use('/test-rh', testRouter);
 router.use('/rh', rhRouter);
 
 module.exports = { router };
