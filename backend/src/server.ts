@@ -105,6 +105,55 @@ app.get('/postgres-test', async (req: any, res: any) => {
   }
 });
 
+// Route pour diagnostiquer l'existence des tables et relations
+app.get('/debug-tables', async (req: any, res: any) => {
+  try {
+    const { Client } = require('pg');
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+
+    await client.connect();
+
+    // Compter les lignes dans chaque table importante
+    const serviceCount = await client.query('SELECT COUNT(*) as count FROM "Service"');
+    const salaryGridCount = await client.query('SELECT COUNT(*) as count FROM "SalaryGrid"');
+    const employeeCount = await client.query('SELECT COUNT(*) as count FROM "Employee"');
+    const polyvalenceCount = await client.query('SELECT COUNT(*) as count FROM "EmployeePolyvalence"');
+
+    // Vérifier les relations cassées
+    const brokenRelations = await client.query(`
+      SELECT 
+        COUNT(CASE WHEN e."mainServiceId" NOT IN (SELECT id FROM "Service") THEN 1 END) as broken_main_service,
+        COUNT(CASE WHEN e."salaryGridId" NOT IN (SELECT id FROM "SalaryGrid") THEN 1 END) as broken_salary_grid
+      FROM "Employee" e
+    `);
+
+    await client.end();
+
+    res.json({
+      success: true,
+      message: "Diagnostic des tables complété",
+      tables: {
+        Service: serviceCount.rows[0].count,
+        SalaryGrid: salaryGridCount.rows[0].count,
+        Employee: employeeCount.rows[0].count,
+        EmployeePolyvalence: polyvalenceCount.rows[0].count
+      },
+      brokenRelations: brokenRelations.rows[0]
+    });
+
+  } catch (error: any) {
+    console.error('[DEBUG-TABLES] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      errorCode: error.code
+    });
+  }
+});
+
 // Route temporaire pour appliquer toutes les migrations manuelles Render  
 app.post('/fix-render-columns-all', async (req: any, res: any) => {
   try {
