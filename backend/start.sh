@@ -14,13 +14,6 @@ npx prisma generate
 echo "[PRISMA] Application des migrations..."
 npx prisma migrate deploy
 
-# Vérifier dist/server.js existe
-if [ -f "dist/server.js" ]; then
-  echo "[SERVER] dist/server.js exists, starting..."
-  node dist/server.js
-else
-  echo "[ERROR] dist/server.js not found!"
-  echo "[INFO] Available files:"
-  ls -la
-  exit 1
-fi
+# TEST ULTRA-SIMPLE - Pas de Prisma pour l'instant
+echo "[SIMPLE] Test avec serveur JavaScript simple..."
+node src/server-simple.js
