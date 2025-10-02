@@ -10,28 +10,27 @@ rhRouter.get('/test', (req: any, res: any) => {
   res.json({ message: 'API RH fonctionne !', timestamp: new Date().toISOString() });
 });
 
-// Route pour créer les tables (migration)
-rhRouter.post('/create-tables', async (req: any, res: any) => {
+// Route pour vérifier les tables (sans migration)
+rhRouter.post('/check-tables', async (req: any, res: any) => {
   try {
-    const { execSync } = require('child_process');
+    // Tester juste la connexion Prisma
+    await prisma.$connect();
     
-    // D'abord générer le client Prisma
-    execSync('npx prisma generate', { 
-      cwd: '/app',
-      stdio: 'pipe' 
+    // Vérifier si les tables existent
+    const tablesCount = await prisma.$queryRaw`
+      SELECT count(*) FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `;
+    
+    res.json({ 
+      message: 'Connexion OK',
+      tablesCount: tablesCount,
+      database: 'Connected to PostgreSQL'
     });
-    
-    // Ensuite déployer les migrations
-    execSync('npx prisma migrate deploy', { 
-      cwd: '/app',
-      stdio: 'pipe' 
-    });
-    
-    res.json({ message: 'Tables créées avec succès' });
   } catch (e) {
-    console.error('Erreur création tables:', e);
+    console.error('Erreur connexion:', e);
     res.status(500).json({ 
-      error: 'Migration error', 
+      error: 'Connection error', 
       message: e.message 
     });
   }
