@@ -6,13 +6,21 @@ echo "[INFO] Working directory: $(pwd)"
 echo "[INFO] Files in dist/: $(ls -la dist/ 2>/dev/null || echo 'dist/ not found')"
 echo "[INFO] Node version: $(node --version)"
 
-# STRATEGIE MINIMALISTE - Zéro complexité, ça marche !
-echo "[MINIMAL] 🚀 Backend HOTALY minimal sans Prisma..."
+# RETOUR AU SERVEUR COMPLET AVEC VRAIE LOGIQUE MÉTIER
+echo "[FULL-SERVER] 🔄 Retour au serveur complet avec DB Prisma..."
 
-# Compiler TypeScript seulement
+# Régénérer client Prisma avec nouvelles colonnes
+echo "[PRISMA] Régénération client..."
+npx prisma generate --force
+
+# Appliquer migrations
+echo "[PRISMA] Migrations..."
+npx prisma migrate deploy
+
+# Compiler TypeScript
 echo "[TYPESCRIPT] Compilation..."
-npx tsc || { echo "[TYPESCRIPT] ❌ Compilation failed"; exit 1; }
+npx tsc
 
-# SERVEUR MINIMALISTE - Données factices, fonctionnel immédiatement
-echo "[MINIMAL-SERVER] Tourner le serveur minimal..."
-node dist/server-minimal.js
+# SERVEUR COMPLET - TOUTE VOTRE LOGIQUE MÉTIER
+echo "[COMPLET-SERVER] 🚀 Démarrage avec vos vraies fonctionnalités..."
+node dist/server.js
