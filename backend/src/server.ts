@@ -36,6 +36,19 @@ app.use(
   })
 );
 
+// Health check
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'HOTALY-PREV API',
+    version: '1.0.0',
+    status: 'running'
+  });
+});
+
 // Routes
 app.use('/api/v1', apiRouter);
 
