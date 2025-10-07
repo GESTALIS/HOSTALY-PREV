@@ -2,7 +2,6 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   XMarkIcon,
-  CalculatorIcon,
   ClockIcon,
   UserGroupIcon,
   HomeIcon,
@@ -90,7 +89,7 @@ const HousekeepingExplanationModal: React.FC<HousekeepingExplanationModalProps> 
             {/* Introduction */}
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
-                <CalculatorIcon className="h-5 w-5 text-blue-600" />
+                <ChartBarIcon className="h-5 w-5 text-blue-600" />
                 <span className="font-medium text-blue-900">Principe fondamental</span>
               </div>
               <p className="text-blue-700 text-sm">
@@ -163,7 +162,7 @@ const HousekeepingExplanationModal: React.FC<HousekeepingExplanationModalProps> 
             {/* 2. Calcul du besoin */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                <CalculatorIcon className="h-5 w-5" />
+                <ChartBarIcon className="h-5 w-5" />
                 <span>2. Calcul du besoin</span>
               </h3>
               

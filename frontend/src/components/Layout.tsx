@@ -10,7 +10,6 @@ import {
   XMarkIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
-  CalculatorIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
@@ -28,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: '/', icon: HomeIcon },
     { name: 'RH', href: '/rh', icon: UsersIcon },
     { name: 'CA', href: '/ca', icon: CurrencyDollarIcon },
-    { name: 'Charges', href: '/charges', icon: CalculatorIcon },
+    { name: 'Charges', href: '/charges', icon: ChartBarIcon },
     { name: 'Résultats', href: '/resultats', icon: ChartBarIcon },
     { name: 'Scénarios', href: '/scenarios', icon: DocumentTextIcon },
     { name: 'Ratios', href: '/ratios', icon: CogIcon },

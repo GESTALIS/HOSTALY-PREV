@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CogIcon, ChartPieIcon, CalculatorIcon, TrendingUpIcon } from '@heroicons/react/24/outline';
+import { CogIcon, ChartPieChartIcon, CalculatorIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
@@ -31,7 +31,7 @@ const Ratios: React.FC = () => {
         <Card variant="elevated" className="hover:scale-105 transition-transform">
           <div className="text-center p-6">
             <div className="mx-auto w-12 h-12 bg-hotaly-secondary/20 rounded-full flex items-center justify-center mb-4">
-              <ChartPieIcon className="h-6 w-6 text-hotaly-secondary" />
+              <ChartPieChartIcon className="h-6 w-6 text-hotaly-secondary" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Rentabilité</h3>
             <p className="text-gray-600 text-sm">Marge bénéficiaire</p>
@@ -59,7 +59,7 @@ const Ratios: React.FC = () => {
         <Card variant="elevated" className="hover:scale-105 transition-transform">
           <div className="text-center p-6">
             <div className="mx-auto w-12 h-12 bg-hotaly-tertiary/20 rounded-full flex items-center justify-center mb-4">
-              <TrendingUpIcon className="h-6 w-6 text-hotaly-tertiary" />
+              <ArrowTrendingUpIcon className="h-6 w-6 text-hotaly-tertiary" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Endettement</h3>
             <p className="text-gray-600 text-sm">Niveau de dette</p>

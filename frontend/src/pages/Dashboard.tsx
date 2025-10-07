@@ -4,7 +4,6 @@ import {
   HomeIcon, 
   UsersIcon, 
   CurrencyDollarIcon, 
-  CalculatorIcon,
   ChartBarIcon,
   DocumentTextIcon,
   CogIcon,
@@ -38,7 +37,7 @@ const Dashboard: React.FC = () => {
       name: 'Charges',
       description: 'Gestion des Coûts & Dépenses',
       href: '/charges',
-      icon: CalculatorIcon,
+      icon: ChartBarIcon,
       color: 'hotaly-accent',
       status: 'À venir',
       features: ['Charges RH', 'Opérationnelles', 'Logistiques']

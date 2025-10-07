@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CalculatorIcon, CogIcon, WrenchScrewdriverIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, CogIcon, WrenchScrewdriverIcon, TruckIcon } from '@heroicons/react/24/outline';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
@@ -16,7 +16,7 @@ const Charges: React.FC = () => {
       <div className="bg-gradient-to-r from-hotaly-secondary to-hotaly-secondary-dark rounded-xl p-6 text-white">
         <div className="flex items-center space-x-4">
           <div className="p-3 bg-white/20 rounded-lg">
-            <CalculatorIcon className="h-8 w-8" />
+            <ChartBarIcon className="h-8 w-8" />
           </div>
           <div>
             <h1 className="text-3xl font-bold">Module Charges</h1>
@@ -77,7 +77,7 @@ const Charges: React.FC = () => {
       <Card className="bg-gradient-to-r from-hotaly-neutral to-hotaly-neutral-light">
         <div className="text-center p-8">
           <div className="mx-auto w-16 h-16 bg-hotaly-secondary/20 rounded-full flex items-center justify-center mb-4">
-            <CalculatorIcon className="h-8 w-8 text-hotaly-secondary" />
+            <ChartBarIcon className="h-8 w-8 text-hotaly-secondary" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Module en Développement</h2>
           <p className="text-gray-600 mb-6 max-w-2xl mx-auto">

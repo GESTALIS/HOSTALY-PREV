@@ -4,7 +4,6 @@ import {
   HomeIcon,
   ClockIcon,
   UserGroupIcon,
-  CalculatorIcon,
   ChartBarIcon,
   CogIcon,
   CheckCircleIcon,
@@ -872,7 +871,7 @@ const HousekeepingModule: React.FC = () => {
   const tabs = [
     { id: 'overview', name: 'Vue d\'ensemble', icon: ChartBarIcon },
     { id: 'rooms', name: 'Configuration chambres', icon: HomeIcon },
-    { id: 'calculation', name: 'Calcul personnel', icon: CalculatorIcon },
+    { id: 'calculation', name: 'Calcul personnel', icon: ChartBarIcon },
     { id: 'planning', name: 'Planning', icon: ClockIcon },
     { id: 'annual', name: 'Planning annuel', icon: ChartBarIcon },
     { id: 'settings', name: 'Paramètres', icon: CogIcon }
@@ -1000,7 +999,7 @@ const HousekeepingModule: React.FC = () => {
           <Card variant="elevated" className="lg:col-span-2">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                <CalculatorIcon className="h-5 w-5" />
+                <ChartBarIcon className="h-5 w-5" />
                 <span>Calcul détaillé du personnel</span>
               </h3>
               
@@ -1171,7 +1170,7 @@ const HousekeepingModule: React.FC = () => {
           <Card variant="elevated">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center space-x-2">
-                <CalculatorIcon className="h-5 w-5" />
+                <ChartBarIcon className="h-5 w-5" />
                 <span>Calcul intelligent du personnel</span>
               </h3>
               
@@ -1790,7 +1789,7 @@ const HousekeepingModule: React.FC = () => {
               {/* Résumé RH réaliste */}
               <div className="bg-green-50 p-6 rounded-lg">
                 <h4 className="font-medium text-green-900 mb-4 flex items-center space-x-2">
-                  <CalculatorIcon className="h-5 w-5" />
+                  <ChartBarIcon className="h-5 w-5" />
                   <span>Résumé RH réaliste</span>
                 </h4>
                 
