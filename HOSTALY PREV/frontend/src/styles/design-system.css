@@ -1,0 +1,111 @@
+/* ===== CHARTE GRAPHIQUE HOTALY ===== */
+
+:root {
+  /* === PALETTE DE COULEURS HOTALY === */
+  
+  /* Couleur principale - Bleu marine profond */
+  --hotaly-primary: #004b5d;
+  --hotaly-primary-light: #006d8a;
+  --hotaly-primary-dark: #003a4a;
+  
+  /* Couleur secondaire - Orange vif */
+  --hotaly-secondary: #f89032;
+  --hotaly-secondary-light: #faa052;
+  --hotaly-secondary-dark: #e67a1a;
+  
+  /* Couleur d'accent - Corail doux */
+  --hotaly-accent: #eca08e;
+  --hotaly-accent-light: #f0b8a3;
+  --hotaly-accent-dark: #e0886f;
+  
+  /* Couleur tertiaire - Or chaud */
+  --hotaly-tertiary: #ba8a36;
+  --hotaly-tertiary-light: #d4a04a;
+  --hotaly-tertiary-dark: #a67a2a;
+  
+  /* Couleur neutre - Gris très clair */
+  --hotaly-neutral: #ededed;
+  --hotaly-neutral-light: #f5f5f5;
+  --hotaly-neutral-dark: #d4d4d4;
+  
+  /* === COULEURS UTILITAIRES === */
+  --hotaly-success: #10b981;
+  --hotaly-warning: #f59e0b;
+  --hotaly-error: #ef4444;
+  --hotaly-info: #3b82f6;
+  
+  /* === TYPOGRAPHIE === */
+  --hotaly-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --hotaly-font-size-xs: 0.75rem;
+  --hotaly-font-size-sm: 0.875rem;
+  --hotaly-font-size-base: 1rem;
+  --hotaly-font-size-lg: 1.125rem;
+  --hotaly-font-size-xl: 1.25rem;
+  --hotaly-font-size-2xl: 1.5rem;
+  --hotaly-font-size-3xl: 1.875rem;
+  
+  /* === ESPACEMENT === */
+  --hotaly-spacing-xs: 0.25rem;
+  --hotaly-spacing-sm: 0.5rem;
+  --hotaly-spacing-md: 1rem;
+  --hotaly-spacing-lg: 1.5rem;
+  --hotaly-spacing-xl: 2rem;
+  --hotaly-spacing-2xl: 3rem;
+  
+  /* === OMBRES === */
+  --hotaly-shadow-sm: 0 1px 2px 0 rgba(0, 75, 93, 0.05);
+  --hotaly-shadow-md: 0 4px 6px -1px rgba(0, 75, 93, 0.1);
+  --hotaly-shadow-lg: 0 10px 15px -3px rgba(0, 75, 93, 0.1);
+  --hotaly-shadow-xl: 0 20px 25px -5px rgba(0, 75, 93, 0.1);
+  
+  /* === BORDER RADIUS === */
+  --hotaly-radius-sm: 0.25rem;
+  --hotaly-radius-md: 0.5rem;
+  --hotaly-radius-lg: 0.75rem;
+  --hotaly-radius-xl: 1rem;
+  --hotaly-radius-full: 9999px;
+  
+  /* === TRANSITIONS === */
+  --hotaly-transition-fast: 150ms ease-in-out;
+  --hotaly-transition-normal: 250ms ease-in-out;
+  --hotaly-transition-slow: 350ms ease-in-out;
+}
+
+/* === CLASSES UTILITAIRES === */
+
+/* Couleurs de fond */
+.bg-hotaly-primary { background-color: var(--hotaly-primary); }
+.bg-hotaly-secondary { background-color: var(--hotaly-secondary); }
+.bg-hotaly-accent { background-color: var(--hotaly-accent); }
+.bg-hotaly-tertiary { background-color: var(--hotaly-tertiary); }
+.bg-hotaly-neutral { background-color: var(--hotaly-neutral); }
+
+/* Couleurs de texte */
+.text-hotaly-primary { color: var(--hotaly-primary); }
+.text-hotaly-secondary { color: var(--hotaly-secondary); }
+.text-hotaly-accent { color: var(--hotaly-accent); }
+.text-hotaly-tertiary { color: var(--hotaly-tertiary); }
+
+/* Bordures */
+.border-hotaly-primary { border-color: var(--hotaly-primary); }
+.border-hotaly-secondary { border-color: var(--hotaly-secondary); }
+.border-hotaly-accent { border-color: var(--hotaly-accent); }
+
+/* Hover effects */
+.hover\:bg-hotaly-primary:hover { background-color: var(--hotaly-primary-light); }
+.hover\:bg-hotaly-secondary:hover { background-color: var(--hotaly-secondary-light); }
+.hover\:text-hotaly-primary:hover { color: var(--hotaly-primary-light); }
+.hover\:text-hotaly-secondary:hover { color: var(--hotaly-secondary-light); }
+
+/* Focus states */
+.focus\:ring-hotaly-primary:focus { --tw-ring-color: var(--hotaly-primary); }
+.focus\:border-hotaly-primary:focus { border-color: var(--hotaly-primary); }
+
+/* Gradients */
+.bg-gradient-hotaly {
+  background: linear-gradient(135deg, var(--hotaly-primary) 0%, var(--hotaly-secondary) 100%);
+}
+
+.bg-gradient-hotaly-subtle {
+  background: linear-gradient(135deg, var(--hotaly-neutral) 0%, var(--hotaly-accent) 100%);
+}

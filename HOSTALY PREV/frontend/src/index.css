@@ -1,0 +1,282 @@
+/* ===== IMPORTS TYPOGRAPHIE MODERNE ===== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== BASE STYLES ===== */
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* ===== TYPOGRAPHIE MODERNE ===== */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-gray-900 tracking-tight;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+  
+  h2 {
+    @apply text-3xl md:text-4xl;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  
+  h3 {
+    @apply text-2xl md:text-3xl;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  
+  /* ===== TEXTE CORPS MODERNE ===== */
+  p, span, div {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+  
+  .text-modern {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  
+  .text-display {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+  
+  /* ===== MONOSPACE MODERNE ===== */
+  code, pre {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-weight: 500;
+  }
+  
+  * {
+    @apply border-gray-200;
+  }
+  
+  /* ===== LIENS ===== */
+  a {
+    @apply text-hotaly-primary hover:text-hotaly-primary-light transition-colors;
+  }
+  
+  /* ===== BOUTONS ===== */
+  button {
+    @apply transition-all duration-200;
+  }
+  
+  /* ===== INPUTS ===== */
+  input, textarea, select {
+    @apply transition-all duration-200;
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    @apply ring-2 ring-hotaly-primary border-hotaly-primary;
+  }
+}
+
+/* ===== COMPOSANTS PERSONNALISÉS ===== */
+@layer components {
+  /* ===== CARD HOTALY ===== */
+  .card-hotaly {
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    transition: all var(--hotaly-transition-normal);
+  }
+  
+  .card-hotaly:hover {
+    @apply shadow-md transform -translate-y-1;
+  }
+  
+  /* ===== BOUTON HOTALY ===== */
+  .btn-hotaly-primary {
+    @apply bg-hotaly-primary text-white px-6 py-3 rounded-lg font-medium;
+    transition: all var(--hotaly-transition-normal);
+  }
+  
+  .btn-hotaly-primary:hover {
+    @apply bg-hotaly-primary-light transform -translate-y-0.5 shadow-lg;
+  }
+  
+  .btn-hotaly-secondary {
+    @apply bg-hotaly-secondary text-white px-6 py-3 rounded-lg font-medium;
+    transition: all var(--hotaly-transition-normal);
+  }
+  
+  .btn-hotaly-secondary:hover {
+    @apply bg-hotaly-secondary-light transform -translate-y-0.5 shadow-lg;
+  }
+  
+  .btn-hotaly-outline {
+    @apply border-2 border-hotaly-primary text-hotaly-primary px-6 py-3 rounded-lg font-medium bg-transparent;
+    transition: all var(--hotaly-transition-normal);
+  }
+  
+  .btn-hotaly-outline:hover {
+    @apply bg-hotaly-primary text-white;
+  }
+  
+  /* ===== BADGE HOTALY ===== */
+  .badge-hotaly {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .badge-hotaly-primary {
+    @apply bg-hotaly-primary text-white;
+  }
+  
+  .badge-hotaly-secondary {
+    @apply bg-hotaly-secondary text-white;
+  }
+  
+  .badge-hotaly-accent {
+    @apply bg-hotaly-accent text-white;
+  }
+  
+  /* ===== ALERT HOTALY ===== */
+  .alert-hotaly {
+    @apply p-4 rounded-lg border-l-4;
+  }
+  
+  .alert-hotaly-success {
+    @apply bg-green-50 border-green-400 text-green-800;
+  }
+  
+  .alert-hotaly-warning {
+    @apply bg-yellow-50 border-yellow-400 text-yellow-800;
+  }
+  
+  .alert-hotaly-error {
+    @apply bg-red-50 border-red-400 text-red-800;
+  }
+  
+  .alert-hotaly-info {
+    @apply bg-blue-50 border-blue-400 text-blue-800;
+  }
+}
+
+/* ===== UTILITAIRES PERSONNALISÉS ===== */
+@layer utilities {
+  /* ===== ANIMATIONS HOTALY ===== */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-bounce-subtle {
+    animation: bounceSubtle 2s infinite;
+  }
+  
+  /* ===== GRADIENTS HOTALY ===== */
+  .bg-gradient-hotaly-primary {
+    background: linear-gradient(135deg, var(--hotaly-primary) 0%, var(--hotaly-primary-light) 100%);
+  }
+  
+  .bg-gradient-hotaly-secondary {
+    background: linear-gradient(135deg, var(--hotaly-secondary) 0%, var(--hotaly-secondary-light) 100%);
+  }
+  
+  .bg-gradient-hotaly-accent {
+    background: linear-gradient(135deg, var(--hotaly-accent) 0%, var(--hotaly-accent-light) 100%);
+  }
+  
+  /* ===== OMBRES HOTALY ===== */
+  .shadow-hotaly-sm {
+    box-shadow: var(--hotaly-shadow-sm);
+  }
+  
+  .shadow-hotaly-md {
+    box-shadow: var(--hotaly-shadow-md);
+  }
+  
+  .shadow-hotaly-lg {
+    box-shadow: var(--hotaly-shadow-lg);
+  }
+  
+  .shadow-hotaly-xl {
+    box-shadow: var(--hotaly-shadow-xl);
+  }
+}
+
+/* ===== ANIMATIONS KEYFRAMES ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* ===== RESPONSIVE UTILITIES ===== */
+@media (max-width: 640px) {
+  .card-hotaly {
+    @apply p-4;
+  }
+  
+  .btn-hotaly-primary,
+  .btn-hotaly-secondary,
+  .btn-hotaly-outline {
+    @apply px-4 py-2 text-sm;
+  }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hotaly-neutral: #1f2937;
+    --hotaly-neutral-light: #374151;
+    --hotaly-neutral-dark: #111827;
+  }
+  
+  body {
+    @apply bg-gray-900 text-gray-100;
+  }
+  
+  .card-hotaly {
+    @apply bg-gray-800 border-gray-700;
+  }
+}

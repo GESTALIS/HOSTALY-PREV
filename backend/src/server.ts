@@ -66,8 +66,9 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 });
 
 const port = Number(process.env.PORT || 3002);
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`API démarrée sur http://localhost:${port}`);
+  console.log(`Access réseau : http://192.168.1.57:${port}`);
 });
 
 

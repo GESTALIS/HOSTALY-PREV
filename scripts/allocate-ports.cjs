@@ -18,7 +18,7 @@ async function findFreePort(start) {
 
 async function main() {
   const defaults = {
-    API: 3002,
+    API: 3003,
     FRONT: 5174,
     DB: 5434,
     PGADMIN: 5050,

@@ -1,0 +1,30 @@
+{
+  "name": "hotaly-prev",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Monorepo HOTALY PREV Phase 0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "setup": "node scripts/allocate-ports.cjs",
+    "db": "docker compose --env-file .env.ports up -d && npm run -w backend prisma:migrate && npm run -w backend prisma:seed",
+    "api": "npm run -w backend dev",
+    "front": "npm run -w frontend dev",
+    "start": "node scripts/start-all.cjs",
+    "stop": "node scripts/stop-all.cjs",
+    "quick": "node scripts/quick-start.cjs",
+    "shutdown": "node scripts/shutdown.cjs",
+    "close": "node scripts/shutdown.cjs"
+  },
+  "devDependencies": {
+    "detect-port": "^1.6.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}

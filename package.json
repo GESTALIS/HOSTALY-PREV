@@ -16,10 +16,15 @@
     "stop": "node scripts/stop-all.cjs",
     "quick": "node scripts/quick-start.cjs",
     "shutdown": "node scripts/shutdown.cjs",
-    "close": "node scripts/shutdown.cjs"
+    "close": "node scripts/shutdown.cjs",
+    "dev:local": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "deploy": "echo 'Déploiement: copiez deploy.ps1 sur le serveur et exécutez-le'"
   },
   "devDependencies": {
-    "detect-port": "^1.6.1"
+    "detect-port": "^1.6.1",
+    "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=18.0.0"
