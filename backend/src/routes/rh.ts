@@ -2,13 +2,7 @@ const { Router } = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('./auth');
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: "postgresql://postgres:postgres@localhost:5434/hotaly_prev"
-    }
-  }
-});
+const prisma = new PrismaClient();
 const rhRouter = Router();
 
 // Route de test sans authentification
