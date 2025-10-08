@@ -32,6 +32,7 @@ import FlexibilityAlerts from '../components/rh/FlexibilityAlerts';
 import ServiceModal from '../components/services/ServiceModal';
 import RHConfiguration from '../components/rh/RHConfiguration';
 import HousekeepingModule from '../components/housekeeping/HousekeepingModule';
+import PlanningIntelligent from '../components/planning/PlanningIntelligent';
 
 interface Employee {
   id: number;
@@ -653,13 +654,7 @@ const RH: React.FC = () => {
           )}
 
           {activeSection === 'planning' && (
-            <Card variant="elevated">
-              <div className="p-6 text-center">
-                <CalendarIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Module Planning</h3>
-                <p className="text-gray-600">Fonctionnalités en cours de développement</p>
-              </div>
-            </Card>
+            <PlanningIntelligent />
           )}
 
           {activeSection === 'configuration' && (
