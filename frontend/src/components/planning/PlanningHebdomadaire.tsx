@@ -89,6 +89,9 @@ const PlanningHebdomadaire: React.FC<PlanningHebdomadaireProps> = ({
     breakTime: 60,
     type: 'WORK'
   });
+  const [filterService, setFilterService] = useState<string>('ALL');
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
@@ -119,17 +122,27 @@ const PlanningHebdomadaire: React.FC<PlanningHebdomadaireProps> = ({
     return planning.totalHours[employeeId] || 0;
   };
 
+  const getWeeklyHoursFromEnum = (weeklyHours: string): number => {
+    const mapping: { [key: string]: number } = {
+      'H35': 35,
+      'H39': 39,
+      'H35_MODULABLE': 35,
+      'H39_MODULABLE': 39
+    };
+    return mapping[weeklyHours] || 35;
+  };
+
   const getEmployeeStatus = (employeeId: number) => {
     const hours = getEmployeeHours(employeeId);
     const employee = employees.find(e => e.id === employeeId);
-    const weeklyHours = employee?.weeklyHours === 'H35' ? 35 : 39;
+    const weeklyHours = employee ? getWeeklyHoursFromEnum(employee.weeklyHours) : 35;
     
     if (hours >= weeklyHours) {
-      return { status: 'complete', color: 'green', text: `${hours}h` };
+      return { status: 'complete', color: 'green', text: `${hours}h / ${weeklyHours}h`, weeklyHours };
     } else if (hours >= weeklyHours * 0.8) {
-      return { status: 'almost', color: 'yellow', text: `${hours}h` };
+      return { status: 'almost', color: 'yellow', text: `${hours}h / ${weeklyHours}h`, weeklyHours };
     } else {
-      return { status: 'low', color: 'red', text: `${hours}h` };
+      return { status: 'low', color: 'red', text: `${hours}h / ${weeklyHours}h`, weeklyHours };
     }
   };
 
@@ -378,52 +391,165 @@ const PlanningHebdomadaire: React.FC<PlanningHebdomadaireProps> = ({
       {/* Liste des employés avec heures */}
       <Card variant="elevated">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">État des employés</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {employees.map(employee => {
-              const status = getEmployeeStatus(employee.id);
-              const hours = getEmployeeHours(employee.id);
-              const weeklyHours = employee.weeklyHours === 'H35' ? 35 : 39;
-              
-              return (
-                <div key={employee.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">
-                      {employee.firstName} {employee.lastName}
-                    </h4>
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      status.color === 'green' ? 'bg-green-100 text-green-800' :
-                      status.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {status.text} / {weeklyHours}h
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <div>Service: {employee.mainService.name}</div>
-                    <div>Contrat: {employee.contractType}</div>
-                    {employee.polyvalentServices.length > 0 && (
-                      <div>Polyvalent: {employee.polyvalentServices.map(p => p.service.name).join(', ')}</div>
-                    )}
-                    <div className="flex items-center space-x-2 mt-2">
-                      {hours >= weeklyHours ? (
-                        <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                      ) : hours >= weeklyHours * 0.8 ? (
-                        <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
-                      ) : (
-                        <ExclamationTriangleIcon className="h-4 w-4 text-red-500" />
-                      )}
-                      <span className="text-xs">
-                        {hours >= weeklyHours ? 'Heures complètes' : 
-                         hours >= weeklyHours * 0.8 ? 'Presque complet' : 
-                         'Heures insuffisantes'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">État des employés</h3>
+            <div className="flex items-center space-x-4">
+              <input
+                type="text"
+                placeholder="Rechercher un employé..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-hotaly-primary"
+              />
+              <select
+                value={filterService}
+                onChange={(e) => setFilterService(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-hotaly-primary"
+              >
+                <option value="ALL">Tous les services</option>
+                {services.map(service => (
+                  <option key={service.id} value={service.id}>{service.name}</option>
+                ))}
+              </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-hotaly-primary"
+              >
+                <option value="ALL">Tous les statuts</option>
+                <option value="complete">Complet</option>
+                <option value="almost">Presque</option>
+                <option value="low">Insuffisant</option>
+              </select>
+            </div>
           </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Employé
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Service
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contrat
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Heures Contrat
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Heures Planifiées
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Statut
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Polyvalence
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {employees
+                  .filter(emp => {
+                    const matchSearch = searchTerm === '' || 
+                      `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchService = filterService === 'ALL' || emp.mainService.id.toString() === filterService;
+                    const status = getEmployeeStatus(emp.id);
+                    const matchStatus = filterStatus === 'ALL' || status.status === filterStatus;
+                    return matchSearch && matchService && matchStatus;
+                  })
+                  .map(employee => {
+                    const status = getEmployeeStatus(employee.id);
+                    const hours = getEmployeeHours(employee.id);
+                    const weeklyHours = getWeeklyHoursFromEnum(employee.weeklyHours);
+                    
+                    return (
+                      <tr key={employee.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="font-medium text-gray-900">
+                            {employee.firstName} {employee.lastName}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span 
+                            className="px-2 py-1 rounded-full text-xs font-medium"
+                            style={{ 
+                              backgroundColor: `${employee.mainService.color}20`,
+                              color: employee.mainService.color
+                            }}
+                          >
+                            {employee.mainService.name}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          {employee.contractType}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
+                          {employee.weeklyHours.replace('_', ' ')}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {hours}h / {weeklyHours}h
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {weeklyHours - hours > 0 ? `${(weeklyHours - hours).toFixed(1)}h restantes` : 'Complet'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className={`flex items-center space-x-2 px-2 py-1 rounded-full text-xs font-medium ${
+                            status.color === 'green' ? 'bg-green-100 text-green-800' :
+                            status.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {hours >= weeklyHours ? (
+                              <>
+                                <CheckCircleIcon className="h-4 w-4" />
+                                <span>Complet</span>
+                              </>
+                            ) : hours >= weeklyHours * 0.8 ? (
+                              <>
+                                <ExclamationTriangleIcon className="h-4 w-4" />
+                                <span>Presque</span>
+                              </>
+                            ) : (
+                              <>
+                                <ExclamationTriangleIcon className="h-4 w-4" />
+                                <span>Insuffisant</span>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          {employee.polyvalentServices.length > 0 ? (
+                            <span className="text-blue-600 font-medium">
+                              {employee.polyvalentServices.length} service(s)
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+
+          {employees.filter(emp => {
+            const matchSearch = searchTerm === '' || 
+              `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchService = filterService === 'ALL' || emp.mainService.id.toString() === filterService;
+            const status = getEmployeeStatus(emp.id);
+            const matchStatus = filterStatus === 'ALL' || status.status === filterStatus;
+            return matchSearch && matchService && matchStatus;
+          }).length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              Aucun employé ne correspond aux filtres
+            </div>
+          )}
         </div>
       </Card>
 

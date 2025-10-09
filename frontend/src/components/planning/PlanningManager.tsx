@@ -126,14 +126,18 @@ const PlanningManager: React.FC = () => {
 
   const loadWeeklyPlanning = async (weekStart: Date) => {
     try {
-      // Pour l'instant, créer un planning vide
-      // TODO: Appeler l'API de planning quand elle sera disponible
       const weekStartStr = weekStart.toISOString().split('T')[0];
+      
+      // Initialiser un planning vide avec les totaux d'heures à 0 pour chaque employé
+      const initialTotalHours: { [key: number]: number } = {};
+      employees.forEach(emp => {
+        initialTotalHours[emp.id] = 0;
+      });
       
       const mockPlanning: WeeklyPlanning = {
         weekStart: weekStartStr,
         slots: [],
-        totalHours: {},
+        totalHours: initialTotalHours,
         recommendations: []
       };
       
@@ -276,7 +280,10 @@ const PlanningManager: React.FC = () => {
               <span className="font-medium">Recommandations IA</span>
             </button>
             <button
-              onClick={() => setMode('manual')}
+              onClick={() => {
+                console.log('Changement vers mode manuel');
+                setMode('manual');
+              }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md transition-colors ${
                 mode === 'manual'
                   ? 'bg-white text-hotaly-primary shadow-sm'
@@ -305,6 +312,7 @@ const PlanningManager: React.FC = () => {
       <AlertesConformite employees={employees} planning={planning} />
 
       {/* Mode Content */}
+      {console.log('Mode actuel:', mode)}
       <AnimatePresence mode="wait">
         {mode === 'recommendations' && (
           <motion.div
