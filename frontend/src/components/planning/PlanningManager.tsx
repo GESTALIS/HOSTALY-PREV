@@ -16,7 +16,6 @@ import {
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import PlanningHebdomadaire from './PlanningHebdomadaire';
-import GestionConges from './GestionConges';
 import AlertesConformite from './AlertesConformite';
 import api from '../../lib/api';
 
@@ -80,7 +79,7 @@ interface WeeklyPlanning {
   recommendations: any[];
 }
 
-type PlanningMode = 'recommendations' | 'manual' | 'leaves';
+type PlanningMode = 'recommendations' | 'manual';
 type ViewMode = 'week' | 'month';
 type Season = 'HAUTE' | 'BASSE';
 
@@ -293,17 +292,6 @@ const PlanningManager: React.FC = () => {
               <HandRaisedIcon className="h-5 w-5" />
               <span className="font-medium">Mode Manuel</span>
             </button>
-            <button
-              onClick={() => setMode('leaves')}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md transition-colors ${
-                mode === 'leaves'
-                  ? 'bg-white text-hotaly-primary shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <CalendarIcon className="h-5 w-5" />
-              <span className="font-medium">Congés Payés</span>
-            </button>
           </div>
         </div>
       </Card>
@@ -429,20 +417,6 @@ const PlanningManager: React.FC = () => {
           </motion.div>
         )}
 
-        {mode === 'leaves' && (
-          <motion.div
-            key="leaves"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
-          >
-            <GestionConges
-              employees={employees}
-              onLeaveAdded={loadData}
-            />
-          </motion.div>
-        )}
       </AnimatePresence>
 
       {/* Résumé des employés */}

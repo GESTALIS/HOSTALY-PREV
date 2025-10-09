@@ -449,6 +449,9 @@ const PlanningHebdomadaire: React.FC<PlanningHebdomadaireProps> = ({
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Polyvalence
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Congés Payés
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -530,6 +533,14 @@ const PlanningHebdomadaire: React.FC<PlanningHebdomadaireProps> = ({
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            <span className="font-medium">0j</span> / 30j
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            30j restants
+                          </div>
                         </td>
                       </tr>
                     );
