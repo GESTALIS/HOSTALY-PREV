@@ -92,7 +92,48 @@ const PlanningIntelligent: React.FC = () => {
       setAnalysis(response.data);
     } catch (error) {
       console.error('Erreur lors du chargement de l\'analyse:', error);
-      setError('Impossible de charger les recommandations de planning');
+      // Données mock temporaires pour tester en local
+      setAnalysis({
+        currentSeason: 'BASSE',
+        currentDate: new Date().toISOString(),
+        recommendations: [
+          {
+            type: 'ECONOMY',
+            priority: 'HIGH',
+            title: 'Fermer plus tôt pendant la basse saison',
+            description: 'Service Réception: fermer à 22:00 au lieu de 24:00 pendant la basse saison',
+            serviceId: 1,
+            serviceName: 'Réception',
+            potentialSavings: 1200,
+            impact: 'Réduction de 2h d\'ouverture = économie d\'1 poste',
+            feasibility: 'HIGH',
+            constraints: ['Respecter les 8h minimum d\'ouverture'],
+            implementation: 'Modifier les horaires dans ServiceSchedule'
+          },
+          {
+            type: 'ALERT',
+            priority: 'MEDIUM',
+            title: 'Employés sous-employés',
+            description: '2 employés n\'atteignent pas le minimum de 20h/semaine',
+            serviceId: 2,
+            serviceName: 'Restauration',
+            impact: 'Risque de démotivation et turnover',
+            feasibility: 'MEDIUM',
+            constraints: ['Besoin de plus d\'heures disponibles'],
+            implementation: 'Augmenter les créneaux ou redistribuer les heures',
+            employees: [
+              { id: 1, name: 'Marie Dupont', currentHours: 15, minHours: 20 },
+              { id: 2, name: 'Jean Martin', currentHours: 18, minHours: 20 }
+            ]
+          }
+        ],
+        summary: {
+          totalServices: 3,
+          totalEmployees: 12,
+          totalRecommendations: 2,
+          potentialSavings: 1200
+        }
+      });
     } finally {
       setLoading(false);
     }

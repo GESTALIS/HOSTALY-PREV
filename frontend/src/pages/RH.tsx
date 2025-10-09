@@ -32,7 +32,7 @@ import FlexibilityAlerts from '../components/rh/FlexibilityAlerts';
 import ServiceModal from '../components/services/ServiceModal';
 import RHConfiguration from '../components/rh/RHConfiguration';
 import HousekeepingModule from '../components/housekeeping/HousekeepingModule';
-import PlanningIntelligent from '../components/planning/PlanningIntelligent';
+import PlanningManager from '../components/planning/PlanningManager';
 
 interface Employee {
   id: number;
@@ -654,7 +654,7 @@ const RH: React.FC = () => {
           )}
 
           {activeSection === 'planning' && (
-            <PlanningIntelligent />
+            <PlanningManager />
           )}
 
           {activeSection === 'configuration' && (

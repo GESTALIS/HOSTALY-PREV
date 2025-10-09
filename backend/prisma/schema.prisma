@@ -124,6 +124,7 @@ model Employee {
   salaryGrid             SalaryGrid           @relation(fields: [salaryGridId], references: [id])
   polyvalentServices     EmployeePolyvalence[]
   schedules              EmployeeSchedule[]
+  paidLeaves             PaidLeave[]          @relation("EmployeePaidLeaves")
 }
 
 model EmployeePolyvalence {
@@ -145,6 +146,20 @@ model EmployeeSchedule {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   employee   Employee @relation(fields: [employeeId], references: [id])
+}
+
+model PaidLeave {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  startDate  DateTime
+  endDate    DateTime
+  days       Int
+  year       Int
+  status     LeaveStatus @default(APPROVED)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  employee   Employee @relation("EmployeePaidLeaves", fields: [employeeId], references: [id])
 }
 
 model OpeningWindow {
@@ -251,5 +266,12 @@ enum ServiceType {
 enum CompensationMode {
   HOURLY
   MONTHLY
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }
 
